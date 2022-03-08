@@ -1,13 +1,13 @@
-package com.highlight;
+package com.cropcircle;
 
 import net.runelite.client.RuneLite;
 import net.runelite.client.externalplugins.ExternalPluginManager;
 
-public class HighlightPluginTest
+public class PluginTest
 {
 	public static void main(String[] args) throws Exception
 	{
-		ExternalPluginManager.loadBuiltin(SpoonNpcHighlightPlugin.class);
+		ExternalPluginManager.loadBuiltin(CropCirclePlugin.class);
 		RuneLite.main(args);
 	}
 }

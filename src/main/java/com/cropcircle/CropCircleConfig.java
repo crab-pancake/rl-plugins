@@ -1,11 +1,11 @@
-package com.highlight;
+package com.cropcircle;
 
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 
 @ConfigGroup("example")
-public interface HighlightConfig extends Config
+public interface CropCircleConfig extends Config
 {
 	@ConfigItem(
 		keyName = "greeting",
@@ -15,5 +15,15 @@ public interface HighlightConfig extends Config
 	default String greeting()
 	{
 		return "Hello";
+	}
+
+	@ConfigItem(
+			keyName = "everywhereOverlay",
+			name = "Overlay everywhere",
+			description = "Overlay shows everywhere?"
+	)
+	default boolean everywhereOverlay()
+	{
+		return false;
 	}
 }

@@ -1,0 +1,401 @@
+// 
+// Decompiled by Procyon v0.5.36
+// 
+
+package com.highlight;
+
+import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.events.GameTick;
+import net.runelite.api.events.NpcDespawned;
+import net.runelite.api.NPCComposition;
+
+import java.util.*;
+
+import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.events.NpcSpawned;
+import net.runelite.api.events.MenuOptionClicked;
+import net.runelite.api.NPC;
+import net.runelite.client.util.Text;
+import net.runelite.api.MenuAction;
+import net.runelite.api.events.MenuEntryAdded;
+import net.runelite.api.GameState;
+import net.runelite.api.events.GameStateChanged;
+import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ConfigChanged;
+import com.google.inject.Provides;
+import net.runelite.client.config.ConfigManager;
+import java.time.Instant;
+import java.awt.Color;
+
+import net.runelite.client.ui.overlay.OverlayManager;
+
+import javax.inject.Inject;
+import net.runelite.api.Client;
+import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.plugins.Plugin;
+
+@PluginDescriptor(name = "[S] Npc Highlight", description = "NPC highlight by Kourend/Boris", tags = { "SpoonNpcHighlight", "spoon" }, conflicts = { "NPC Indicators" })
+
+@Slf4j
+public class SpoonNpcHighlightPlugin extends Plugin
+{
+    @Inject
+    private Client client;
+    @Inject
+    private OverlayManager overlayManager;
+    @Inject
+    private SpoonNpcHighlightOverlay overlay;
+    @Inject
+    private SpoonNpcHighlightConfig config;
+    public ArrayList<String> tileNames = new ArrayList<>();
+    public ArrayList<Integer> tileIds = new ArrayList<>();
+    public ArrayList<String> trueTileNames = new ArrayList<>();
+    public ArrayList<Integer> trueTileIds = new ArrayList<>();
+    public ArrayList<String> swTileNames = new ArrayList<>();
+    public ArrayList<Integer> swTileIds = new ArrayList<>();
+    public ArrayList<String> hullNames = new ArrayList<>();
+    public ArrayList<Integer> hullIds = new ArrayList<>();
+    public ArrayList<String> areaNames = new ArrayList<>();
+    public ArrayList<Integer> areaIds = new ArrayList<>();
+    public ArrayList<String> outlineNames = new ArrayList<>();
+    public ArrayList<Integer> outlineIds = new ArrayList<>();
+    public ArrayList<String> turboNames = new ArrayList<>();
+    public ArrayList<Integer> turboIds = new ArrayList<>();
+    public ArrayList<Color> turboColors = new ArrayList<>();
+    public ArrayList<NpcSpawn> npcSpawns = new ArrayList<>();
+    public Instant lastTickUpdate;
+    public int turboModeStyle = 0;
+    public int turboTileWidth = 0;
+    public int turboOutlineWidth = 0;
+    public int turboOutlineFeather = 0;
+    
+    @Provides
+    SpoonNpcHighlightConfig providesConfig(final ConfigManager configManager) {
+        return (SpoonNpcHighlightConfig)configManager.getConfig((Class)SpoonNpcHighlightConfig.class);
+    }
+    
+    protected void startUp() {
+        reset();
+        overlayManager.add(overlay);
+        splitNameList(config.tileNames(), tileNames);
+        splitIdList(config.tileIds(), tileIds);
+        splitNameList(config.trueTileNames(), trueTileNames);
+        splitIdList(config.trueTileIds(), trueTileIds);
+        splitNameList(config.swTileNames(), swTileNames);
+        splitIdList(config.swTileIds(), swTileIds);
+        splitNameList(config.hullNames(), hullNames);
+        splitIdList(config.hullIds(), hullIds);
+        splitNameList(config.areaNames(), areaNames);
+        splitIdList(config.areaIds(), areaIds);
+        splitNameList(config.outlineNames(), outlineNames);
+        splitIdList(config.outlineIds(), outlineIds);
+        splitNameList(config.turboNames(), turboNames);
+        splitIdList(config.turboIds(), turboIds);
+    }
+    
+    protected void shutDown() {
+        reset();
+        overlayManager.remove(overlay);
+    }
+    
+    private void reset() {
+        tileNames.clear();
+        tileIds.clear();
+        trueTileNames.clear();
+        trueTileIds.clear();
+        swTileNames.clear();
+        swTileIds.clear();
+        hullNames.clear();
+        hullIds.clear();
+        areaNames.clear();
+        areaIds.clear();
+        outlineNames.clear();
+        outlineIds.clear();
+        npcSpawns.clear();
+        turboModeStyle = 0;
+        turboTileWidth = 0;
+        turboOutlineWidth = 0;
+        turboOutlineFeather = 0;
+    }
+    
+    private void splitNameList(final String configStr, final ArrayList<String> strList) {
+        if (!configStr.equals("")) {
+            for (final String str : configStr.split(",")) {
+                if (!str.trim().equals("")) {
+                    strList.add(str.trim().toLowerCase());
+                }
+            }
+        }
+    }
+    
+    private void splitIdList(final String configStr, final ArrayList<Integer> idList) {
+        if (!configStr.equals("")) {
+            for (final String str : configStr.split(",")) {
+                if (!str.trim().equals("")) {
+                    try {
+                        idList.add(Integer.parseInt(str.trim()));
+                    }
+                    catch (Exception ex) {
+                        System.out.println("npc Highlight: " + ex.getMessage());
+                    }
+                }
+            }
+        }
+    }
+    
+    @Subscribe
+    public void onConfigChanged(final ConfigChanged event) {
+        if (event.getKey().equals("tileNames")) {
+            tileNames.clear();
+            splitNameList(config.tileNames(), tileNames);
+        }
+        else if (event.getKey().equals("tileIds")) {
+            tileIds.clear();
+            splitIdList(config.tileIds(), tileIds);
+        }
+        else if (event.getKey().equals("trueTileNames")) {
+            trueTileNames.clear();
+            splitNameList(config.trueTileNames(), trueTileNames);
+        }
+        else if (event.getKey().equals("trueTileIds")) {
+            trueTileIds.clear();
+            splitIdList(config.trueTileIds(), trueTileIds);
+        }
+        else if (event.getKey().equals("swTileNames")) {
+            swTileNames.clear();
+            splitNameList(config.swTileNames(), swTileNames);
+        }
+        else if (event.getKey().equals("swTileIds")) {
+            swTileIds.clear();
+            splitIdList(config.swTileIds(), swTileIds);
+        }
+        else if (event.getKey().equals("hullNames")) {
+            hullNames.clear();
+            splitNameList(config.hullNames(), hullNames);
+        }
+        else if (event.getKey().equals("hullIds")) {
+            hullIds.clear();
+            splitIdList(config.hullIds(), hullIds);
+        }
+        else if (event.getKey().equals("areaNames")) {
+            areaNames.clear();
+            splitNameList(config.areaNames(), areaNames);
+        }
+        else if (event.getKey().equals("areaIds")) {
+            areaIds.clear();
+            splitIdList(config.areaIds(), areaIds);
+        }
+        else if (event.getKey().equals("outlineNames")) {
+            outlineNames.clear();
+            splitNameList(config.outlineNames(), outlineNames);
+        }
+        else if (event.getKey().equals("outlineIds")) {
+            outlineIds.clear();
+            splitIdList(config.outlineIds(), outlineIds);
+        }
+        else if (event.getKey().equals("turboNames")) {
+            turboNames.clear();
+            splitNameList(config.turboNames(), turboNames);
+        }
+        else if (event.getKey().equals("turboIds")) {
+            turboIds.clear();
+            splitIdList(config.turboIds(), turboIds);
+        }
+    }
+    
+    @Subscribe
+    public void onGameStateChanged(final GameStateChanged event) {
+        if (event.getGameState() == GameState.LOGIN_SCREEN || event.getGameState() == GameState.HOPPING) {
+            npcSpawns.clear();
+        }
+    }
+
+    @Subscribe
+    public void onMenuEntryAdded(final MenuEntryAdded event) {
+        int type = event.getType();
+        if (type >= 2000) {
+            type -= 2000;
+        }
+        final MenuAction menuAction = MenuAction.of(type);
+        if (menuAction == MenuAction.EXAMINE_NPC && client.isKeyPressed(81)) {
+            final int id = event.getIdentifier();
+            final NPC npc = client.getCachedNPCs()[id];
+            if (npc != null && npc.getName() != null) {
+                createTagMenuEntry(event, config.tagStyleMode(), npc);
+            }
+        }
+    }
+
+    private void createTagMenuEntry(MenuEntryAdded event, SpoonNpcHighlightConfig.tagStyleMode mode, NPC npc){
+
+        ArrayList<String> names = whichListNames(mode);
+        String highlightType;
+        switch (mode){
+            case TRUE_TILE: {highlightType = "True-Tile"; break;}
+            case SW_TILE: {highlightType = "SW-Tile"; break;}
+            case HULL: {highlightType = "Hull"; break;}
+            case AREA: {highlightType = "Area"; break;}
+            case OUTLINE: {highlightType = "Outline"; break;}
+            case TURBO: {highlightType = "Turbo"; break;}
+            default: {highlightType = "Tile";}
+        }
+
+        String target = event.getTarget();
+        if (config.highlightMenuNames()) {
+            String colorCode;
+            if (config.tagStyleMode() == SpoonNpcHighlightConfig.tagStyleMode.TURBO) {
+                if (turboColors.size() == 0) {
+                    colorCode = Integer.toHexString(Color.getHSBColor(new Random().nextFloat(), 1.0f, 1.0f).getRGB());
+                }
+                else {
+                    colorCode = Integer.toHexString(turboColors.get(turboNames.indexOf(npc.getName().toLowerCase())).getRGB());
+                }
+            }
+            else {
+                colorCode = (npc.isDead() ? Integer.toHexString(config.deadNpcMenuColor().getRGB()) : Integer.toHexString(config.highlightColor().getRGB()));
+            }
+            target = "<col=" + colorCode.substring(2) + ">" + Text.removeTags(event.getTarget());
+        }
+
+        client.createMenuEntry(-1)
+            .setOption(names.contains(npc.getName().toLowerCase()) ? "Untag All " + highlightType : "Tag All " + highlightType)
+            .setTarget(target)
+            .setParam0(event.getActionParam0())
+            .setParam1(event.getActionParam1())
+            .setIdentifier(event.getIdentifier())
+            .setType(MenuAction.RUNELITE);
+    }
+
+    @Subscribe
+    public void onMenuOptionClicked(final MenuOptionClicked event) {
+        if (event.getMenuAction() == MenuAction.RUNELITE && (event.getMenuOption().contains("Tag All ") || event.getMenuOption().contains("Untag All ")) &&
+                (event.getMenuOption().contains(" Tile") || event.getMenuOption().contains(" True-Tile") || event.getMenuOption().contains(" SW-Tile") || event.getMenuOption().contains(" Hull") || event.getMenuOption().contains(" Area") || event.getMenuOption().contains(" Outline") || event.getMenuOption().contains(" Turbo"))) {
+            final int id = event.getId();
+            final NPC npc = client.getCachedNPCs()[id];
+            ArrayList<String> listToChange = new ArrayList<>();
+            if (npc.getName() != null) {
+                if (event.getMenuOption().contains("Untag All")) {
+                    whichListNames(config.tagStyleMode()).remove(npc.getName().toLowerCase());
+                }
+                else {
+                    whichListNames(config.tagStyleMode()).add(npc.getName().toLowerCase());
+                }
+                listToChange = whichListNames(config.tagStyleMode());
+            }
+            if (config.tagStyleMode() == SpoonNpcHighlightConfig.tagStyleMode.TILE) {
+                config.setTileNames(Text.toCSV((Collection)listToChange));
+            }
+            else if (config.tagStyleMode() == SpoonNpcHighlightConfig.tagStyleMode.TRUE_TILE) {
+                config.setTrueTileNames(Text.toCSV((Collection)listToChange));
+            }
+            else if (config.tagStyleMode() == SpoonNpcHighlightConfig.tagStyleMode.SW_TILE) {
+                config.setSwTileNames(Text.toCSV((Collection)listToChange));
+            }
+            else if (config.tagStyleMode() == SpoonNpcHighlightConfig.tagStyleMode.HULL) {
+                config.setHullNames(Text.toCSV((Collection)listToChange));
+            }
+            else if (config.tagStyleMode() == SpoonNpcHighlightConfig.tagStyleMode.AREA) {
+                config.setAreaNames(Text.toCSV((Collection)listToChange));
+            }
+            else if (config.tagStyleMode() == SpoonNpcHighlightConfig.tagStyleMode.OUTLINE) {
+                config.setOutlineNames(Text.toCSV((Collection)listToChange));
+            }
+            else {
+                config.setTurboNames(Text.toCSV((Collection)listToChange));
+            }
+            event.consume();
+        }
+    }
+
+    @Subscribe
+    public void onNpcSpawned(final NpcSpawned event) {
+        for (final NpcSpawn n : npcSpawns) {
+            if (event.getNpc().getIndex() == n.index) {
+                if (n.spawnPoint == null) {
+                    final NPCComposition comp = event.getNpc().getTransformedComposition();
+                    if (comp != null) {
+                        for (final WorldPoint wp : n.spawnLocations) {
+                            if (Math.abs(wp.getX() - event.getNpc().getWorldLocation().getX()) <= comp.getSize() && Math.abs(wp.getY() - event.getNpc().getWorldLocation().getY()) <= comp.getSize()) {
+                                n.spawnPoint = event.getNpc().getWorldLocation();
+                                n.respawnTime = client.getTickCount() - n.diedOnTick + 1;
+                                break;
+                            }
+                        }
+                    }
+                    n.spawnLocations.add(event.getNpc().getWorldLocation());
+                }
+                n.dead = false;
+                break;
+            }
+        }
+    }
+    
+    @Subscribe
+    public void onNpcDespawned(final NpcDespawned event) {
+        if (event.getNpc().isDead()) {
+            boolean exists = false;
+            for (final NpcSpawn n : npcSpawns) {
+                if (event.getNpc().getIndex() == n.index) {
+                    n.diedOnTick = client.getTickCount();
+                    n.dead = true;
+                    exists = true;
+                    break;
+                }
+            }
+            if (!exists && event.getNpc().getName() != null) {
+                final String name = event.getNpc().getName().toLowerCase();
+                final int id = event.getNpc().getId();
+                if (tileNames.contains(name) || tileIds.contains(id) || trueTileNames.contains(name) || trueTileIds.contains(id) || swTileNames.contains(name) || swTileIds.contains(id) || hullNames.contains(name) || hullIds.contains(id) || areaNames.contains(name) || areaIds.contains(id) || outlineNames.contains(name) || outlineIds.contains(id) || turboNames.contains(name) || turboIds.contains(id)) {
+                    npcSpawns.add(new NpcSpawn(event.getNpc()));
+                }
+                else {
+                    final ArrayList<ArrayList<String>> allLists = new ArrayList<ArrayList<String>>((Collection<? extends ArrayList<String>>)Arrays.asList(tileNames, trueTileNames, swTileNames, hullNames, areaNames, outlineNames, turboNames));
+                    for (final ArrayList<String> strList : allLists) {
+                        for (final String str : strList) {
+                            if (str.equalsIgnoreCase(name) || (str.contains("*") && ((str.startsWith("*") && str.endsWith("*") && name.contains(str.replace("*", ""))) || (str.startsWith("*") && name.endsWith(str.replace("*", ""))) || name.startsWith(str.replace("*", ""))))) {
+                                npcSpawns.add(new NpcSpawn(event.getNpc()));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    @Subscribe
+    public void onGameTick(final GameTick event) {
+        lastTickUpdate = Instant.now();
+        turboColors.clear();
+        for (int i = 0; i < turboNames.size() + turboIds.size(); ++i) {
+            turboColors.add(Color.getHSBColor(new Random().nextFloat(), 1.0f, 1.0f));
+        }
+        turboModeStyle = new Random().nextInt(6);
+        turboTileWidth = new Random().nextInt(10) + 1;
+        turboOutlineWidth = new Random().nextInt(50) + 1;
+        turboOutlineFeather = new Random().nextInt(4);
+    }
+
+    private ArrayList<String> whichListNames(SpoonNpcHighlightConfig.tagStyleMode mode){
+        switch(mode){
+            case TRUE_TILE: {return trueTileNames;}
+            case SW_TILE: {return swTileNames;}
+            case HULL: {return hullNames;}
+            case AREA: {return areaNames;}
+            case OUTLINE: {return outlineNames;}
+            case TURBO: {return turboNames;}
+            default: {return tileNames;}
+        }
+    }
+
+    private ArrayList<Integer> whichListIds(SpoonNpcHighlightConfig.tagStyleMode mode){
+        switch(mode){
+            case TRUE_TILE: {return trueTileIds;}
+            case SW_TILE: {return swTileIds;}
+            case HULL: {return hullIds;}
+            case AREA: {return areaIds;}
+            case OUTLINE: {return outlineIds;}
+            case TURBO: {return turboIds;}
+            default: {return tileIds;}
+        }
+    }
+}
