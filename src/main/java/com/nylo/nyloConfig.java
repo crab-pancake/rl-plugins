@@ -4,7 +4,7 @@ import net.runelite.client.config.*;
 
 import java.awt.*;
 
-@ConfigGroup("example")
+@ConfigGroup("nylohighlight")
 public interface nyloConfig extends Config
 {
 	@ConfigSection(name = "Line settings", description = "Highlighted line settings", position = 1, closedByDefault = true)

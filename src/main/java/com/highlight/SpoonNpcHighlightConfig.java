@@ -16,19 +16,19 @@ import net.runelite.client.config.Config;
 public interface SpoonNpcHighlightConfig extends Config
 {
     @ConfigSection(name = "Tile", description = "Tile Plugins", position = 1, closedByDefault = true)
-    public static final String tileSection = "tile";
+    String tileSection = "tile";
     @ConfigSection(name = "True Tile", description = "True Tile Plugins", position = 2, closedByDefault = true)
-    public static final String trueTileSection = "trueTile";
+    String trueTileSection = "trueTile";
     @ConfigSection(name = "South West Tile", description = "South West Tile Plugins", position = 3, closedByDefault = true)
-    public static final String swTileSection = "swTile";
+    String swTileSection = "swTile";
     @ConfigSection(name = "Hull", description = "Hull Plugins", position = 4, closedByDefault = true)
-    public static final String hullSection = "hull";
+    String hullSection = "hull";
     @ConfigSection(name = "Area", description = "Area Plugins", position = 5, closedByDefault = true)
-    public static final String areaSection = "area";
+    String areaSection = "area";
     @ConfigSection(name = "Outline", description = "Outline Plugins", position = 6, closedByDefault = true)
-    public static final String outlineSection = "outline";
+    String outlineSection = "outline";
     @ConfigSection(name = "<html><font color=#ff0000><i><b>TURBO MODE<b><i>", description = "Fuckin send it", position = 7, closedByDefault = true)
-    public static final String turboSection = "section";
+    String turboSection = "section";
     
     @ConfigItem(position = 1, keyName = "tileHighlight", name = "Tile Highlight", description = "Highlights npc's tile", section = "tile")
     default boolean tileHighlight() {
@@ -236,28 +236,42 @@ public interface SpoonNpcHighlightConfig extends Config
         return true;
     }
 
-    @ConfigItem(position = 15, keyName = "ignoreDeadNpcs", name = "Don't Ignore Dead NPCs", description = "List of npcs not to ignore on death")
-    default String ignoreDeadNpcs() {
+    @ConfigItem(position=16, keyName="ignoreDeadExclusion", name="Ignore Dead Exclusion List", description="List of npc's to not remove highlight when dead")
+    default String ignoreDeadExclusion()
+    {
         return "";
     }
-
-    @ConfigItem(keyName = "outlineIds", name = "", description = "")
-    void setUndeadNpcs(final String p0);
     
-    @ConfigItem(position = 16, keyName = "deadNpcMenuColor", name = "Dead NPC Menu Color", description = "Highlights names in right click menu entry when NPC is dead")
+    @ConfigItem(position = 17, keyName = "deadNpcMenuColor", name = "Dead NPC Menu Color", description = "Highlights names in right click menu entry when NPC is dead")
     Color deadNpcMenuColor();
     
-    @ConfigItem(position = 17, keyName = "respawnTimer", name = "Respawn Timer", description = "Shows timer for when a marked NPC will respawn")
+    @ConfigItem(position = 18, keyName = "respawnTimer", name = "Respawn Timer", description = "Shows timer for when a marked NPC will respawn")
     default respawnTimerMode respawnTimer() {
         return respawnTimerMode.OFF;
     }
 
-    @ConfigItem(position = 18, keyName = "respawnTimerBox", name = "Respawn Timer Box", description = "Marks tile(s) where NPC respawns")
+    @ConfigItem(position = 19, keyName = "respawnTimerBox", name = "Respawn Timer Box", description = "Marks tile(s) where NPC respawns")
     default boolean respawnTimerBox() {
         return true;
     }
+
+    @Alpha
+    @ConfigItem(position=20, keyName="respawnTimerColor", name="Respawn Time Color", description="Sets the color of the text for Respawn Timer")
+    default Color respawnTimerColor() {
+        return Color.WHITE;
+    }
+
+    @ConfigItem(position=21, keyName="displayName", name="Display Name", description="Shows name of NPC's in the list above them")
+    default String displayName() {
+        return "";
+    }
+
+    @ConfigItem(position=21, keyName="npcMinimapMode", name="Highlight Minimap", description="Highlights NPC on minimap and or displays name")
+    default npcMinimapMode npcMinimapMode() {
+        return npcMinimapMode.OFF;
+    }
     
-    public enum tagStyleMode
+    enum tagStyleMode
     {
         TILE, 
         TRUE_TILE, 
@@ -268,17 +282,25 @@ public interface SpoonNpcHighlightConfig extends Config
         TURBO;
     }
     
-    public enum interactingHighlightMode
+    enum interactingHighlightMode
     {
         OFF, 
         COLOR, 
         BOTH;
     }
     
-    public enum respawnTimerMode
+    enum respawnTimerMode
     {
         OFF, 
         TICKS, 
         SECONDS;
+    }
+
+    enum npcMinimapMode {
+        OFF,
+        DOT,
+        NAME,
+        BOTH;
+
     }
 }

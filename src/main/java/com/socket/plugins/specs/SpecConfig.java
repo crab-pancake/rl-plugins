@@ -4,7 +4,7 @@ import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 
-@ConfigGroup("example")
+@ConfigGroup("mspeccounter")
 public interface SpecConfig extends Config
 {
 	@ConfigItem(position=0, keyName="showHitOverlay", name="Hit Overlay", description="Show the special attack overlay.")
@@ -27,8 +27,14 @@ public interface SpecConfig extends Config
 		return true;
 	}
 
-	@ConfigItem(keyName="vulnerability", name="Show Vulnerability", description="Displays an infobox when you successfully land vulnerability", position=3)
+	@ConfigItem(position=4, keyName="vulnerability", name="Show Vulnerability", description="Displays an infobox when you successfully land vulnerability")
 	default boolean vulnerability() {
+		return true;
+	}
+
+	@ConfigItem(position=5, keyName = "identifier", name = "Shared socket identifier", description = "Share socket spec data with spec counter? Restart plugin to change")
+	default boolean identifier()
+	{
 		return true;
 	}
 }

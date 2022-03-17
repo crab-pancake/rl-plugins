@@ -25,7 +25,7 @@ public class NpcSpawn
         this.name = npc.getName();
         this.id = npc.getId();
         this.index = npc.getIndex();
-        this.spawnLocations = new ArrayList<WorldPoint>();
+        this.spawnLocations = new ArrayList<>();
         this.respawnTime = -1;
         this.diedOnTick = -1;
         this.spawnPoint = null;
@@ -34,41 +34,5 @@ public class NpcSpawn
         if (composition != null) {
             this.size = composition.getSize();
         }
-    }
-    
-    int getIndex() {
-        return this.index;
-    }
-    
-    String getName() {
-        return this.name;
-    }
-    
-    int getId() {
-        return this.id;
-    }
-    
-    int getSize() {
-        return this.size;
-    }
-    
-    int getDiedOnTick() {
-        return this.diedOnTick;
-    }
-    
-    int getRespawnTime() {
-        return this.respawnTime;
-    }
-    
-    ArrayList<WorldPoint> getSpawnLocations() {
-        return this.spawnLocations;
-    }
-    
-    WorldPoint getSpawnPoint() {
-        return this.spawnPoint;
-    }
-    
-    boolean isDead() {
-        return this.dead;
     }
 }

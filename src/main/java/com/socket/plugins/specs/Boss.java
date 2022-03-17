@@ -22,7 +22,8 @@ enum Boss {
     KING_BLACK_DRAGON(239, 2642, 6502),
     KRIL_TSUTSAROTH(3129, 6495),
     VENETENATIS(6504, 6610),
-    VETION(6611, 6612);
+    VETION(6611, 6612),
+    SOTETSEG(8387, 8388, 10867, 10868, 10864, 10865);
 
     //"The Maiden of Sugadinti", "Xarpus", "Great Olm (Left claw)", "Tekton", "Tekton (enraged)", Sotetseg
 
