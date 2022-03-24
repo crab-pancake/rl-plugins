@@ -11,7 +11,7 @@ repositories {
 	mavenCentral()
 }
 
-def runeLiteVersion = '1.8.13'
+def runeLiteVersion = '1.8.15'
 
 dependencies {
 	compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
@@ -26,7 +26,7 @@ dependencies {
 
 group = 'com.highlight'
 version = '1.0-SNAPSHOT'
-sourceCompatibility = '1.8'
+sourceCompatibility = '1.8.15'
 
 tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'

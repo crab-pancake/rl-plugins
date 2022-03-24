@@ -24,27 +24,27 @@ import static com.google.common.base.Predicates.alwaysTrue;
 	name = "ice demon sbs",
 	enabledByDefault = false
 )
-public class sbsSwapPlugin extends Plugin
+public class sbsIceDemonPlugin extends Plugin
 {
 
 	@Inject
 	private Client client;
 	@Inject
-	private sbsConfig config;
+	private sbsIceDemonConfig config;
 
 	private final ArrayListMultimap<String, Integer> optionIndexes = ArrayListMultimap.create();
 
 	private final Multimap<String, Swap> swaps = LinkedHashMultimap.create();
 
-	public sbsSwapPlugin() {
+	public sbsIceDemonPlugin() {
 	}
 
 	private boolean IS_ICE_DEMON = true;
 
 	@Provides
-	sbsConfig provideConfig(ConfigManager configManager)
+	sbsIceDemonConfig provideConfig(ConfigManager configManager)
 	{
-		return configManager.getConfig(sbsConfig.class);
+		return configManager.getConfig(sbsIceDemonConfig.class);
 	}
 
 

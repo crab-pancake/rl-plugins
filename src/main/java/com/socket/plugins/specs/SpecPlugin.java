@@ -240,6 +240,12 @@ public class SpecPlugin extends Plugin
 					else if (specialWeapon.isDamage()){
 						return;
 					}
+
+					if (!interactedNpcIds.contains(((NPC) lastSpecTarget).getId())) {
+						removeCounters();
+						addInteracting(((NPC) lastSpecTarget).getId());
+					}
+
 					String pName = client.getLocalPlayer().getName();
 					updateCounter(pName, specialWeapon, pName, minSpecHit);
 
@@ -249,7 +255,6 @@ public class SpecPlugin extends Plugin
 						specCounterUpdate.setMemberId(party.getLocalMember().getMemberId());
 						wsClient.send(specCounterUpdate);
 					}
-
 					socketSend(pName, ((NPC)lastSpecTarget).getId(), specialWeapon, minSpecHit);
 
 					// reset
@@ -307,11 +312,11 @@ public class SpecPlugin extends Plugin
 		}
 		if (wasSpec && specialWeapon != null) {
 			if (!specialWeapon.isDamage()){
-				log.debug("non dmg based spec weapon processed hitsplat: check");
+				log.debug("non dmg based spec weapon processed hitsplat: check.");
 			}
 			int hit = getHit(specialWeapon, hitsplat);
 			log.debug("Special attack target: id: {} - target: {} - weapon: {} - amount: {}", interactingId, target.getName(), specialWeapon, hit);
-			String pName = client.getLocalPlayer().getName();
+			String pName = Objects.requireNonNull(client.getLocalPlayer()).getName();
 			updateCounter(pName, specialWeapon, pName, hit);
 
 			if (!party.getMembers().isEmpty())
@@ -322,14 +327,6 @@ public class SpecPlugin extends Plugin
 			}
 
 			socketSend(pName, interactingId, specialWeapon, hit);
-//			JSONObject data = new JSONObject();
-//			data.put("player", pName);
-//			data.put("target", interactingId);
-//			data.put("weapon", specialWeapon.ordinal());
-//			data.put("hit", hit);
-//			JSONObject payload = new JSONObject();
-//			payload.put("m-specs", data);
-//			eventBus.post(new SocketBroadcastPacket(payload));
 		}
 	}
 

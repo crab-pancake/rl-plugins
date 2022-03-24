@@ -5,7 +5,7 @@ import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 
 @ConfigGroup("sbsicedemon")
-public interface sbsConfig extends Config
+public interface sbsIceDemonConfig extends Config
 {
 	@ConfigItem(
 			keyName = "debug",

@@ -173,7 +173,7 @@ public class SpoonNpcHighlightOverlay extends Overlay
             }
         }
         if (config.respawnTimer() != SpoonNpcHighlightConfig.respawnTimerMode.OFF) {
-            // TODO: don't do this if in instance: cox, tob, inferno, fight caves, nmz. zulrah?
+            // TODO: don't do this if in instance: tob, inferno, fight caves, nmz. zulrah? cox included because scavs
             for (NpcSpawn n : plugin.npcSpawns) {
                 Point textLoc;
                 String text;

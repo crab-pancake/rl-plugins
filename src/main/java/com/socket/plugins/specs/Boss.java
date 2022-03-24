@@ -23,9 +23,11 @@ enum Boss {
     KRIL_TSUTSAROTH(3129, 6495),
     VENETENATIS(6504, 6610),
     VETION(6611, 6612),
-    SOTETSEG(8387, 8388, 10867, 10868, 10864, 10865);
-
-    //"The Maiden of Sugadinti", "Xarpus", "Great Olm (Left claw)", "Tekton", "Tekton (enraged)", Sotetseg
+    MAIDEN(8360,8361,8362,8363,10822,10823,10824),
+    SOTETSEG(8387, 8388, 10867, 10868, 10864, 10865),
+    XARPUS(8340,8341,10770,10771,10772,10773),
+    TEKTON(7540,7541,7542,7543,7544,7545),
+    OLM(7552,7555);  // TODO: check maiden tek xarpus olm
 
     private final Set<Integer> ids;
 

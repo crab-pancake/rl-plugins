@@ -1,20 +1,19 @@
 package com.highlight;
 
+import com.google.common.collect.ImmutableSet;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.*;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.NpcDespawned;
-import net.runelite.api.NPCComposition;
 
 import java.util.*;
 
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.NpcSpawned;
 import net.runelite.api.events.MenuOptionClicked;
-import net.runelite.api.NPC;
+import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.Text;
-import net.runelite.api.MenuAction;
 import net.runelite.api.events.MenuEntryAdded;
-import net.runelite.api.GameState;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
@@ -26,7 +25,7 @@ import java.awt.Color;
 import net.runelite.client.ui.overlay.OverlayManager;
 
 import javax.inject.Inject;
-import net.runelite.api.Client;
+
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.plugins.Plugin;
 
@@ -66,6 +65,7 @@ public class SpoonNpcHighlightPlugin extends Plugin
     public int turboTileWidth = 0;
     public int turboOutlineWidth = 0;
     public int turboOutlineFeather = 0;
+    private static final Set<MenuAction> NPC_MENU_ACTIONS = ImmutableSet.of(MenuAction.NPC_FIRST_OPTION, MenuAction.NPC_SECOND_OPTION, MenuAction.NPC_THIRD_OPTION, MenuAction.NPC_FOURTH_OPTION, MenuAction.NPC_FIFTH_OPTION, MenuAction.SPELL_CAST_ON_NPC, MenuAction.ITEM_USE_ON_NPC);
     
     @Provides
     SpoonNpcHighlightConfig providesConfig(final ConfigManager configManager) {
@@ -136,7 +136,7 @@ public class SpoonNpcHighlightPlugin extends Plugin
                         idList.add(Integer.parseInt(str.trim()));
                     }
                     catch (Exception ex) {
-                        System.out.println("npc Highlight: " + ex.getMessage());
+                        log.error("s npc Highlight: " + ex.getMessage());
                     }
                 }
             }
@@ -217,10 +217,27 @@ public class SpoonNpcHighlightPlugin extends Plugin
             type -= 2000;
         }
         final MenuAction menuAction = MenuAction.of(type);
-        if (menuAction == MenuAction.EXAMINE_NPC && client.isKeyPressed(81)) {
+        if (NPC_MENU_ACTIONS.contains(menuAction)) {  // shift not pressed: not making a tag?
+            NPC npc = client.getCachedNPCs()[event.getIdentifier()];
+            Color color = null;
+            if (npc.isDead()) {
+                color = config.deadNpcMenuColor();
+            } else if (config.highlightMenuNames() && npc.getName() != null && checkAllLists(npc)) {
+                color = config.tagStyleMode() == SpoonNpcHighlightConfig.tagStyleMode.TURBO ? Color.getHSBColor(new Random().nextFloat(), 1.0f, 1.0f) : config.highlightColor();
+            }
+            if (color != null) {
+                MenuEntry[] menuEntries = client.getMenuEntries();
+                MenuEntry menuEntry = menuEntries[menuEntries.length - 1];
+                String target = ColorUtil.prependColorTag(Text.removeTags(event.getTarget()), color);
+                menuEntry.setTarget(target);
+                client.setMenuEntries(menuEntries);
+            }
+        }
+        else
+         if (menuAction == MenuAction.EXAMINE_NPC && client.isKeyPressed(81)) {
             final int id = event.getIdentifier();
             final NPC npc = client.getCachedNPCs()[id];
-            if (npc != null && npc.getName() != null) {
+            if (npc != null && npc.getName() != null) {  // && !npc.isDead() ?
                 createTagMenuEntry(event, config.tagStyleMode(), npc);
             }
         }
@@ -232,30 +249,50 @@ public class SpoonNpcHighlightPlugin extends Plugin
         ArrayList<String> names = whichListNames(mode);
         String highlightType;
         switch (mode){
-            case TRUE_TILE: {highlightType = "True-Tile"; break;}
-            case SW_TILE: {highlightType = "SW-Tile"; break;}
-            case HULL: {highlightType = "Hull"; break;}
-            case AREA: {highlightType = "Area"; break;}
-            case OUTLINE: {highlightType = "Outline"; break;}
-            case TURBO: {highlightType = "Turbo"; break;}
-            default: {highlightType = "Tile";}
+            case TRUE_TILE: {
+                highlightType = "True-Tile";
+                break;
+            }
+            case SW_TILE: {
+                highlightType = "SW-Tile";
+                break;
+            }
+            case HULL: {
+                highlightType = "Hull";
+                break;
+            }
+            case AREA: {
+                highlightType = "Area";
+                break;
+            }
+            case OUTLINE: {
+                highlightType = "Outline";
+                break;
+            }
+            case TURBO: {
+                highlightType = "Turbo";
+                break;
+            }
+            default: {
+                highlightType = "Tile";
+            }
         }
 
         String target = event.getTarget();
         if (config.highlightMenuNames()) {
-            String colorCode;
+            int colorCode;
             if (config.tagStyleMode() == SpoonNpcHighlightConfig.tagStyleMode.TURBO) {
                 if (turboColors.size() == 0) {
-                    colorCode = Integer.toHexString(Color.getHSBColor(new Random().nextFloat(), 1.0f, 1.0f).getRGB());
+                    colorCode = Color.getHSBColor(new Random().nextFloat(), 1.0f, 1.0f).getRGB();
                 }
                 else {
-                    colorCode = Integer.toHexString(turboColors.get(turboNames.indexOf(npc.getName().toLowerCase())).getRGB());
+                    colorCode = turboColors.get(turboNames.indexOf(npc.getName().toLowerCase())).getRGB();
                 }
             }
             else {
-                colorCode = (npc.isDead() ? Integer.toHexString(config.deadNpcMenuColor().getRGB()) : Integer.toHexString(config.highlightColor().getRGB()));
+                colorCode = (npc.isDead() ? config.deadNpcMenuColor().getRGB() : config.highlightColor().getRGB());
             }
-            target = "<col=" + colorCode.substring(2) + ">" + Text.removeTags(event.getTarget());
+            target = ColorUtil.prependColorTag(Text.removeTags(event.getTarget()), new Color(colorCode));
         }
 
         client.createMenuEntry(-1)
