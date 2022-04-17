@@ -466,7 +466,7 @@ extends Plugin {
 
     @Subscribe
     public void onVarbitChanged(VarbitChanged event) {
-        boolean tempInRaid = this.client.getVar(Varbits.IN_RAID) == 1;
+        boolean tempInRaid = this.client.getVarbitValue(Varbits.IN_RAID) == 1;
         boolean bl = tempInRaid;
         if (!tempInRaid) {
             this.reset();

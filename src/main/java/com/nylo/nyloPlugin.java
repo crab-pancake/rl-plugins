@@ -58,10 +58,11 @@ public class nyloPlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
-		this.overlayManager.add(nyloOverlay);
+		overlayManager.add(nyloOverlay);
+		// TODO: add infobox and use onInfoboxMenuClicked to toggle wave nylos (also aggros?) don't need panel in this case
 //		this.panel = this.injector.getInstance(tobPanel.class);
 //		BufferedImage icon = ImageUtil.loadImageResource(this.getClass(), "/nylo.png");
-//		this.navButton = NavigationButton.builder().tooltip("Nylo").icon(icon).priority(3).panel(this.panel).build();
+//		navButton = NavigationButton.builder().tooltip("Nylo").icon(icon).priority(3).panel(this.panel).build();
 //		if (this.inNylo()) {
 //			this.clientToolbar.addNavigation(this.navButton);
 //		}
@@ -70,8 +71,8 @@ public class nyloPlugin extends Plugin
 	@Override
 	protected void shutDown() throws Exception
 	{
-		this.overlayManager.remove(this.nyloOverlay);
-//		this.clientToolbar.removeNavigation(this.navButton);
+		overlayManager.remove(nyloOverlay);
+//		clientToolbar.removeNavigation(navButton);
 	}
 
 	@Subscribe
@@ -81,6 +82,6 @@ public class nyloPlugin extends Plugin
 	}
 
 	public boolean inNylo() {
-		return this.client.getMapRegions() != null && ArrayUtils.contains(this.client.getMapRegions(), NYLO_ROOM);
+		return client.getMapRegions() != null && ArrayUtils.contains(client.getMapRegions(), NYLO_ROOM);
 	}
 }

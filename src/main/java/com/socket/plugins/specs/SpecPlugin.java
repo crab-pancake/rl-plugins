@@ -212,7 +212,7 @@ public class SpecPlugin extends Plugin
 	}
 
 	@Subscribe
-	private void onGameTick(GameTick tick)
+	public void onGameTick(GameTick tick)
 	{
 		if (client.getGameState() != GameState.LOGGED_IN) return;
 

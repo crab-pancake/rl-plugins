@@ -1,36 +1,3 @@
-/*
- * Decompiled with CFR 0.150.
- * 
- * Could not load the following classes:
- *  com.google.inject.Provides
- *  javax.inject.Inject
- *  net.runelite.api.Actor
- *  net.runelite.api.ChatMessageType
- *  net.runelite.api.Client
- *  net.runelite.api.GameState
- *  net.runelite.api.Skill
- *  net.runelite.api.VarPlayer
- *  net.runelite.api.Varbits
- *  net.runelite.api.events.ActorDeath
- *  net.runelite.api.events.ChatMessage
- *  net.runelite.api.events.GameStateChanged
- *  net.runelite.api.events.GameTick
- *  net.runelite.api.events.GraphicChanged
- *  net.runelite.api.events.MenuOptionClicked
- *  net.runelite.api.events.VarbitChanged
- *  net.runelite.client.config.ConfigManager
- *  net.runelite.client.eventbus.EventBus
- *  net.runelite.client.eventbus.Subscribe
- *  net.runelite.client.events.ConfigChanged
- *  net.runelite.client.game.ItemManager
- *  net.runelite.client.game.SpriteManager
- *  net.runelite.client.plugins.Plugin
- *  net.runelite.client.plugins.PluginDescriptor
- *  net.runelite.client.ui.overlay.Overlay
- *  net.runelite.client.ui.overlay.OverlayManager
- *  org.slf4j.Logger
- *  org.slf4j.LoggerFactory
- */
 package com.socket.plugins.playerstatus;
 
 import com.google.inject.Provides;
@@ -120,35 +87,36 @@ extends Plugin {
      * WARNING - Removed try catching itself - possible behaviour change.
      */
     protected void startUp() {
-        this.lastRaidVarb = -1;
-        this.lastRefresh = 0;
+        lastRaidVarb = -1;
+        lastRefresh = 0;
         synchronized (statusEffects) {
-            this.statusEffects.clear();
+            statusEffects.clear();
         }
         synchronized (partyStatus) {
-            this.partyStatus.clear();
+            partyStatus.clear();
         }
-        this.overlayManager.add(this.overlay);
-        this.overlayManager.add(this.sidebar);
-        if (!this.config.specXferList().equals("")) {
+        overlayManager.add(overlay);
+        overlayManager.add(sidebar);
+        if (!config.specXferList().equals("")) {
             this.playerNames.clear();
-            for (String name : this.config.specXferList().split(",")) {
+            for (String name : config.specXferList().split(",")) {
                 if (name.trim().equals("")) continue;
-                this.playerNames.add(name.trim().toLowerCase());
+                playerNames.add(name.trim().toLowerCase());
             }
         }
-        if (!this.config.showPlayerWhiteList().equals("")) {
-            this.whiteList.clear();
-            for (String name : this.config.showPlayerWhiteList().split(",")) {
+        if (
+                config.showPlayerWhiteList().equals("")) {
+            whiteList.clear();
+            for (String name : config.showPlayerWhiteList().split(",")) {
                 if (name.trim().equals("")) continue;
-                this.whiteList.add(name.trim().toLowerCase());
+                whiteList.add(name.trim().toLowerCase());
             }
         }
     }
 
     protected void shutDown() {
-        this.overlayManager.remove(this.overlay);
-        this.overlayManager.remove(this.sidebar);
+        overlayManager.remove(overlay);
+        overlayManager.remove(sidebar);
     }
 
     @Subscribe
@@ -157,20 +125,20 @@ extends Plugin {
             block5: {
                 if (!event.getGroup().equals("Socket Player Status Config v3")) break block4;
                 if (!event.getKey().equals("specXferList")) break block5;
-                if (this.config.specXferList().equals("")) break block4;
-                this.playerNames.clear();
-                for (String name : this.config.specXferList().split(",")) {
+                if (config.specXferList().equals("")) break block4;
+                playerNames.clear();
+                for (String name : config.specXferList().split(",")) {
                     if (name.trim().equals("")) continue;
                     this.playerNames.add(name.trim().toLowerCase());
                 }
                 break block4;
             }
             if (event.getKey().equals("showPlayerWhiteList")) {
-                this.whiteList.clear();
-                if (!this.config.showPlayerWhiteList().equals("")) {
-                    for (String name : this.config.showPlayerWhiteList().split(",")) {
+                whiteList.clear();
+                if (!config.showPlayerWhiteList().equals("")) {
+                    for (String name : config.showPlayerWhiteList().split(",")) {
                         if (name.trim().equals("")) continue;
-                        this.whiteList.add(name.trim().toLowerCase());
+                        whiteList.add(name.trim().toLowerCase());
                     }
                 }
             }
@@ -179,19 +147,19 @@ extends Plugin {
 
     @Subscribe
     public void onVarbitChanged(VarbitChanged event) {
-        int raidVarb = this.client.getVar(Varbits.IN_RAID);
-        int vengCooldownVarb = this.client.getVar(Varbits.VENGEANCE_COOLDOWN);
-        int isVengeancedVarb = this.client.getVar(Varbits.VENGEANCE_ACTIVE);
-        if (this.lastRaidVarb != raidVarb) {
-            this.removeGameTimer(GameTimer.OVERLOAD_RAID);
-            this.removeGameTimer(GameTimer.PRAYER_ENHANCE);
-            this.lastRaidVarb = raidVarb;
+        int raidVarb = client.getVarbitValue(Varbits.IN_RAID);
+        int vengCooldownVarb = client.getVarbitValue(Varbits.VENGEANCE_COOLDOWN);
+        int isVengeancedVarb = client.getVarbitValue(Varbits.VENGEANCE_ACTIVE);
+        if (lastRaidVarb != raidVarb) {
+            removeGameTimer(GameTimer.OVERLOAD_RAID);
+            removeGameTimer(GameTimer.PRAYER_ENHANCE);
+            lastRaidVarb = raidVarb;
         }
-        if (this.lastVengCooldownVarb != vengCooldownVarb) {
+        if (lastVengCooldownVarb != vengCooldownVarb) {
             if (vengCooldownVarb == 1) {
-                this.createGameTimer(GameTimer.VENGEANCE);
+                createGameTimer(GameTimer.VENGEANCE);
             } else {
-                this.removeGameTimer(GameTimer.VENGEANCE);
+                removeGameTimer(GameTimer.VENGEANCE);
             }
             this.lastVengCooldownVarb = vengCooldownVarb;
         }
@@ -224,7 +192,7 @@ extends Plugin {
             this.removeGameTimer(GameTimer.STAMINA);
         }
         if (event.getMessage().startsWith("You drink some of your") && event.getMessage().contains("overload")) {
-            if (this.client.getVar(Varbits.IN_RAID) == 1) {
+            if (this.client.getVarbitValue(Varbits.IN_RAID) == 1) {
                 this.createGameTimer(GameTimer.OVERLOAD_RAID);
             } else {
                 this.createGameTimer(GameTimer.OVERLOAD);
@@ -412,11 +380,7 @@ extends Plugin {
         this.removeGameTimer(timer, name);
         Map<String, List<AbstractMarker>> map2 = map = this.statusEffects;
         synchronized (map2) {
-            List<AbstractMarker> activeEffects = this.statusEffects.get(name);
-            if (activeEffects == null) {
-                activeEffects = new ArrayList<>();
-                this.statusEffects.put(name, activeEffects);
-            }
+            List<AbstractMarker> activeEffects = this.statusEffects.computeIfAbsent(name, k -> new ArrayList<>());
             activeEffects.add(marker);
             this.sortMarkers(activeEffects);
         }
@@ -484,11 +448,7 @@ extends Plugin {
         this.removeGameIndicator(gameIndicator, name);
         Map<String, List<AbstractMarker>> map2 = map = this.statusEffects;
         synchronized (map2) {
-            List<AbstractMarker> activeEffects = this.statusEffects.get(name);
-            if (activeEffects == null) {
-                activeEffects = new ArrayList<>();
-                this.statusEffects.put(name, activeEffects);
-            }
+            List<AbstractMarker> activeEffects = this.statusEffects.computeIfAbsent(name, k -> new ArrayList<>());
             activeEffects.add(marker);
             this.sortMarkers(activeEffects);
         }
