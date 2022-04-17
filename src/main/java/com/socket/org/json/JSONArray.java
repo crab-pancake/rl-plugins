@@ -297,7 +297,7 @@ implements Iterable<Object> {
     }
 
     public JSONArray put(int index, double value) throws JSONException {
-        this.put(index, new Double(value));
+        this.put(index, Double.valueOf(value));
         return this;
     }
 

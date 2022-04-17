@@ -226,14 +226,12 @@ extends Plugin {
             int surge = 7855;
             Actor interacting = p.getInteracting();
             NPC target = interacting == null ? null : (NPC)interacting;
-            NPC nPC = target;
             if (p.equals(this.client.getLocalPlayer())) {
-                int del = 1100;
                 if (anim != 0 && anim != -1) {
                     if (!this.nyloSlaveInteracting(target)) {
                         int style = this.client.getVar(VarPlayer.ATTACK_STYLE);
                         if (anim == scy && style == 2) {
-                            String a = style == 0 ? "accurate" : (style == 2 ? "crush" : "defensive");
+                            String a = "crush";
                             this.flagMesOut("You scythed on " + a + ".");
                         } else if (anim == bow && !this.otherShitBow(wep) && !this.client.isPrayerActive(Prayer.RIGOUR)) {
                             this.flagMesOut("You bowed without rigour active.");

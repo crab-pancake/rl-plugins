@@ -433,7 +433,7 @@ public class JSONObject {
                 } else if (!Character.isUpperCase(key.charAt(1))) {
                     key = key.substring(0, 1).toLowerCase() + key.substring(1);
                 }
-                Object result = value.invoke(bean, null);
+                Object result = value.invoke(bean, (Object) null);
                 if (result == null) continue;
                 this.map.put(key, JSONObject.wrap(result));
             } catch (Exception exception) {

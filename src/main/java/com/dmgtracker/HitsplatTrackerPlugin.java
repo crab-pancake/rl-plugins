@@ -124,6 +124,8 @@ public class HitsplatTrackerPlugin extends Plugin {
                 hitsplatEffects += "ahrims ";
             }
             //TODO: add opal/pearl/diamond/dragonstone/onyx bolt effects, check if they linger till next attack.
+            // keris? gadderhammer?
+            //
 
             else if (graphicChanged.getActor().getGraphic() == 85){ // TODO: CHECK THIS IS CORRECT
                 hits.add(new Hitsplat_(-1, "splash"));

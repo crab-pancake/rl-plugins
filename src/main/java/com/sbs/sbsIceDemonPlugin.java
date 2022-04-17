@@ -111,7 +111,7 @@ public class sbsIceDemonPlugin extends Plugin
 		if (config.debug()){
 			client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "npc spawned"+event.getNpc().getName(), null);
 		}
-		if (client.getVar(Varbits.IN_RAID) == 1 && (event.getNpc().getId() == 7584 ||  event.getNpc().getId() == 7585)) {
+		if (client.getVarbitValue(Varbits.IN_RAID) == 1 && (event.getNpc().getId() == 7584 ||  event.getNpc().getId() == 7585)) {
 			if (config.debug()){
 				client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "dormant ice demon has spawned", null);
 			}
@@ -125,7 +125,7 @@ public class sbsIceDemonPlugin extends Plugin
 		if (config.debug()){
 			client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "npc despawned"+event.getNpc().getName(), null);
 		}
-		if (client.getVar(Varbits.IN_RAID) == 1 && event.getNpc().getId() == 7585) {
+		if (client.getVarbitValue(Varbits.IN_RAID) == 1 && event.getNpc().getId() == 7585) {
 			if (config.debug()){
 				client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "active ice demon has disappeared", null);
 			}
@@ -139,7 +139,7 @@ public class sbsIceDemonPlugin extends Plugin
 		if (config.debug()){
 			client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "animation changed"+e.getActor().getName(), null);
 		}
-		if(client.getVar(Varbits.IN_RAID) == 1 && e.getActor().getName() != null && Objects.equals(e.getActor().getName(), "Ice Demon") && e.getActor().getAnimation() == 67){
+		if(client.getVarbitValue(Varbits.IN_RAID) == 1 && e.getActor().getName() != null && Objects.equals(e.getActor().getName(), "Ice Demon") && e.getActor().getAnimation() == 67){
 			if (config.debug()){
 				client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "ice demon death animation seen", null);
 			}

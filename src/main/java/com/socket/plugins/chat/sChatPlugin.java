@@ -86,7 +86,7 @@ implements KeyListener {
     }
 
     protected void startUp() throws Exception {
-        this.keyManager.registerKeyListener(this);
+        keyManager.registerKeyListener(this);
     }
 
     public void keyTyped(KeyEvent e) {
@@ -94,36 +94,36 @@ implements KeyListener {
 
     @Subscribe
     public void onVarClientStrChanged(VarClientStrChanged event) throws InterruptedException {
-        this.removeHotkey();
+        removeHotkey();
     }
 
     private void removeHotkey() throws InterruptedException {
-        String typedText = this.client.getVar(VarClientStr.CHATBOX_TYPED_TEXT);
+        String typedText = client.getVar(VarClientStr.CHATBOX_TYPED_TEXT);
         if (typedText.length() > 0) {
             String subTypedText = typedText.substring(0, typedText.length() - 1);
-            String x = KeyEvent.getKeyText(this.config.hotkey().getKeyCode());
+            String x = KeyEvent.getKeyText(config.hotkey().getKeyCode());
             char a = (char)KeyEvent.getExtendedKeyCodeForChar(typedText.substring(typedText.length() - 1).toCharArray()[0]);
-            char b = (char)this.config.hotkey().getKeyCode();
+            char b = (char)config.hotkey().getKeyCode();
             typedText.substring(typedText.length() - 1);
             if (a == b) {
-                this.client.setVar(VarClientStr.CHATBOX_TYPED_TEXT, subTypedText);
+                client.setVar(VarClientStr.CHATBOX_TYPED_TEXT, subTypedText);
             }
         }
     }
 
     @Subscribe
     private void onBeforeRender(BeforeRender event) {
-        Widget chatbox = this.client.getWidget(WidgetInfo.CHATBOX_INPUT);
+        Widget chatbox = client.getWidget(WidgetInfo.CHATBOX_INPUT);
         if (chatbox != null && !chatbox.isHidden()) {
-            if (!this.tradeActive && this.client.getVarcIntValue(41) == 6) {
-                this.lastTypingState = this.typing;
-                this.typing = true;
-                this.tradeActive = true;
-            } else if (this.tradeActive && this.client.getVarcIntValue(41) != 6) {
-                this.typing = this.lastTypingState;
-                this.tradeActive = false;
+            if (!tradeActive && client.getVarcIntValue(41) == 6) {
+                lastTypingState = typing;
+                typing = true;
+                tradeActive = true;
+            } else if (tradeActive && client.getVarcIntValue(41) != 6) {
+                typing = lastTypingState;
+                tradeActive = false;
             }
-            if (this.typing) {
+            if (typing) {
                 if (!chatbox.getText().startsWith("[SOCKET CHAT] ")) {
                     chatbox.setText("[SOCKET CHAT] " + chatbox.getText());
                 }

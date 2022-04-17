@@ -197,7 +197,7 @@ public class XML {
         }
         catch (Exception ignore) {
             try {
-                Double value = new Double(string);
+                Double value = Double.valueOf(string);
                 if (value.toString().equals(string)) {
                     return value;
                 }
