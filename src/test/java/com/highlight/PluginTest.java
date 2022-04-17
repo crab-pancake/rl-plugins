@@ -1,5 +1,6 @@
 package com.highlight;
 
+import com.dmgtracker.HitsplatTrackerPlugin;
 import net.runelite.client.RuneLite;
 import net.runelite.client.externalplugins.ExternalPluginManager;
 
@@ -8,7 +9,7 @@ public class PluginTest
 {
 	public static void main(String[] args) throws Exception
 	{
-		ExternalPluginManager.loadBuiltin(SpoonNpcHighlightPlugin.class);
+		ExternalPluginManager.loadBuiltin(HitsplatTrackerPlugin.class);
 		RuneLite.main(args);
 	}
 }

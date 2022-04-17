@@ -10,9 +10,9 @@ import static net.runelite.client.RuneLite.RUNELITE_DIR;
 
 @Slf4j
 public class HitsplatTrackerWriter {
-    public void toFile(String username, String filename, String contents)
+    public void toFile(String filename, String contents)
     {
-        File dir = new File(RUNELITE_DIR, "dmg-tracker/" + username);
+        File dir = new File(RUNELITE_DIR, "dmg-tracker/");
 
         dir.mkdirs();
 

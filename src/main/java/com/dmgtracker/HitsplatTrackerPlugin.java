@@ -9,9 +9,11 @@ import net.runelite.api.events.VarbitChanged;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
+import net.runelite.client.events.OverlayMenuClicked;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.client.ui.overlay.OverlayMenuEntry;
 
 import javax.inject.Inject;
 import java.time.LocalDateTime;
@@ -20,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Objects;
 
 import static com.dmgtracker.AttackStyle.*;
+import static net.runelite.client.ui.overlay.OverlayManager.OPTION_CONFIGURE;
 
 @PluginDescriptor(
         name = "Hitsplat Tracker",
@@ -30,10 +33,14 @@ import static com.dmgtracker.AttackStyle.*;
 public class HitsplatTrackerPlugin extends Plugin {
     @Inject
     private Client client;
+
     @Inject
     private OverlayManager overlayManager;
 
+    @Inject
     private HitsplatTrackerOverlay overlay;
+
+    @Inject
     private HitsplatTrackerConfig config;
 
     private final ArrayList<Hitsplat_> hits = new ArrayList<>();
@@ -41,7 +48,6 @@ public class HitsplatTrackerPlugin extends Plugin {
     private HitsplatTrackerWriter writer;
 
     private String filename;
-    private String username;
 
     private String hitsplatEffects;
 
@@ -55,14 +61,18 @@ public class HitsplatTrackerPlugin extends Plugin {
     private int attackStyleVarbit = -1;
     private int equippedWeaponTypeVarbit = -1;
     private int castingModeVarbit = -1;
-    private AttackStyle attackStyle;
+    private int lastChangedWeapon = -1;
+    AttackStyle attackStyle;
 
-    protected void startUp(){
+    @Provides
+    HitsplatTrackerConfig getConfig(ConfigManager configManager) {
+        return configManager.getConfig(HitsplatTrackerConfig.class);
+    }
+
+    @Override
+    protected void startUp() throws Exception{
         writer = new HitsplatTrackerWriter();
-
-        if (config.showInfobox()){
-            overlayManager.add(overlay);
-        }
+        overlayManager.add(overlay);
     }
 
     @Override
@@ -71,9 +81,14 @@ public class HitsplatTrackerPlugin extends Plugin {
         writeHits();
     }
 
-    @Provides
-    HitsplatTrackerConfig getConfig(ConfigManager configManager) {
-        return configManager.getConfig(HitsplatTrackerConfig.class);
+    @Subscribe
+    public void onOverlayMenuClicked(OverlayMenuClicked overlayMenuClicked){
+        OverlayMenuEntry overlayMenuEntry = overlayMenuClicked.getEntry();
+        if (overlayMenuEntry.getMenuAction() == MenuAction.RUNELITE_OVERLAY
+                && overlayMenuClicked.getOverlay() == overlay
+                && overlayMenuClicked.getEntry().getOption().equals(OPTION_CONFIGURE)) {
+            client.addChatMessage(ChatMessageType.ENGINE,"hittracker","clicked overlay option","hittracker");
+        }
     }
 
     @Subscribe
@@ -129,6 +144,7 @@ public class HitsplatTrackerPlugin extends Plugin {
 
             else if (graphicChanged.getActor().getGraphic() == 85){ // TODO: CHECK THIS IS CORRECT
                 hits.add(new Hitsplat_(-1, "splash"));
+                misses += 1;
             }
         }
     }
@@ -136,17 +152,18 @@ public class HitsplatTrackerPlugin extends Plugin {
     @Subscribe
     public void onVarbitChanged(VarbitChanged event)
     {
-        username = Objects.requireNonNull(client.getLocalPlayer()).getName();
-
         int currentAttackStyleVarbit = client.getVar(VarPlayer.ATTACK_STYLE);
         int currentEquippedWeaponTypeVarbit = client.getVarbitValue(Varbits.EQUIPPED_WEAPON_TYPE);
         int currentCastingModeVarbit = client.getVarbitValue(Varbits.DEFENSIVE_CASTING_MODE);
 
         if (attackStyleVarbit != currentAttackStyleVarbit || equippedWeaponTypeVarbit != currentEquippedWeaponTypeVarbit || castingModeVarbit != currentCastingModeVarbit)
         {
-            client.addChatMessage(ChatMessageType.ENGINE,"HitTracker","Weapon or attack style changed" + biggestHit, "HitTracker");
-            writeHits();
-
+            if (lastChangedWeapon != client.getTickCount()) {
+                client.addChatMessage(ChatMessageType.ENGINE, "HitTracker", "Weapon or attack style changed", "HitTracker");
+                lastChangedWeapon = client.getTickCount();
+                writeHits();
+            }
+            // TODO: check if below stuff can go inside the above check with some print tests
             attackStyleVarbit = currentAttackStyleVarbit;
             equippedWeaponTypeVarbit = currentEquippedWeaponTypeVarbit;
             castingModeVarbit = currentCastingModeVarbit;
@@ -174,16 +191,28 @@ public class HitsplatTrackerPlugin extends Plugin {
 
     private void writeHits(){
         if (hits.size() > 0) {
-            for (Hitsplat_ hit : hits) {
-                writer.toFile(username, filename, hit.amount + ", " + hit.effects);
-            }
-            writer.toFile(username, filename, "total hits, " + totalHits);
-            writer.toFile(username, filename, "accurate, " + accurateHits);
-            writer.toFile(username, filename, "missed, " + misses);
-            writer.toFile(username, filename, "attack style, " + attackStyle.toString());
-            writer.toFile(username, filename, "weapon type, " + WeaponType.getWeaponType(equippedWeaponTypeVarbit).toString());
+            writer.toFile(filename, ToCSV());
+            hits.clear();
         }
         filename = formatter.format(LocalDateTime.now());
+    }
+
+    public String ToCSV()
+    {
+        StringBuilder csv = new StringBuilder();
+        csv.append("amount,effects");
+        csv.append("\n");
+
+        for (Hitsplat_ hit : hits)
+        {
+            csv.append("").append(hit.amount).append(",").append(hit.effects).append("\n");
+        }
+        csv.append("total hits,").append(totalHits).append("\n");
+        csv.append("accurate,").append(accurateHits).append("\n");
+        csv.append("misses,").append(misses).append("\n");
+        csv.append("attack style,").append(attackStyle).append("\n");
+        csv.append("weapon type,").append(WeaponType.getWeaponType(equippedWeaponTypeVarbit).toString()).append("\n");
+        return csv.toString();
     }
 
     static class Hitsplat_ {
