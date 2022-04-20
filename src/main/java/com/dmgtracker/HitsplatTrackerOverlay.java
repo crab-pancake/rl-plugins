@@ -1,8 +1,5 @@
 package com.dmgtracker;
 
-import net.runelite.api.Client;
-import net.runelite.api.MenuAction;
-import net.runelite.client.ui.overlay.OverlayMenuEntry;
 import net.runelite.client.ui.overlay.OverlayPanel;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.OverlayPriority;
@@ -37,19 +34,26 @@ public class HitsplatTrackerOverlay extends OverlayPanel {
         }
         List<LayoutableRenderableEntity> elems = panelComponent.getChildren();
         elems.clear();
-        elems.add(LineComponent.builder().left("Total hitsplats: ").right(Integer.toString(plugin.totalHits)).build());
-        elems.add(LineComponent.builder().left("Largest hitsplat: ").right(Integer.toString(plugin.biggestHit)).build());
-        elems.add(LineComponent.builder().left("Accurate hits: ").right(Integer.toString(plugin.accurateHits)).build());
-        elems.add(LineComponent.builder().left("Missed hits: ").right(Integer.toString(plugin.misses)).build());
-        if (plugin.totalHits > 0) {
-            float accuracy;
-            if (plugin.attackStyle == CASTING || plugin.attackStyle == DEFENSIVE_CASTING){
-                accuracy = (float)plugin.accurateHits / plugin.totalHits;
+        if (config.target() != HitsplatTrackerConfig.Target.RECEIVED) {
+            elems.add(LineComponent.builder().left("Total hits dealt: ").right(Integer.toString(plugin.totalDealt)).build());
+            elems.add(LineComponent.builder().left("Largest hit dealt: ").right(Integer.toString(plugin.biggestDealt)).build());
+            elems.add(LineComponent.builder().left("Accurate dealt: ").right(Integer.toString(plugin.accurateDealt)).build());
+            elems.add(LineComponent.builder().left("Misses dealt: ").right(Integer.toString(plugin.missesDealt)).build());
+            if (plugin.totalDealt > 0) {
+                float accuracy;
+                if (plugin.attackStyle == CASTING || plugin.attackStyle == DEFENSIVE_CASTING) {
+                    accuracy = (float) plugin.accurateDealt / plugin.totalDealt;
+                } else {
+                    accuracy = (plugin.accurateDealt + (float) plugin.missesDealt / (plugin.biggestDealt + 1)) / plugin.totalDealt;
+                }
+                elems.add(LineComponent.builder().left("Approximate accuracy: ").right(String.format("%.4f", (accuracy))).build());
             }
-            else {
-                accuracy = (plugin.accurateHits + (float) plugin.misses / (plugin.biggestHit + 1)) / plugin.totalHits;
-            }
-            elems.add(LineComponent.builder().left("Approximate accuracy: ").right(String.format("%.4f", (accuracy))).build());
+        }
+        if (config.target() != HitsplatTrackerConfig.Target.DEALT){
+            elems.add(LineComponent.builder().left("Total hits received: ").right(Integer.toString(plugin.totalReceived)).build());
+            elems.add(LineComponent.builder().left("Largest hit received: ").right(Integer.toString(plugin.biggestReceived)).build());
+            elems.add(LineComponent.builder().left("Accurate received: ").right(Integer.toString(plugin.accurateReceived)).build());
+            elems.add(LineComponent.builder().left("Misses received: ").right(Integer.toString(plugin.missesReceived)).build());
         }
 
         return super.render(graphics);

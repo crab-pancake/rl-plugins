@@ -23,6 +23,7 @@ import java.util.Objects;
 
 import static com.dmgtracker.AttackStyle.*;
 import static net.runelite.client.ui.overlay.OverlayManager.OPTION_CONFIGURE;
+import static com.dmgtracker.HitsplatTrackerConfig.Target;
 
 @PluginDescriptor(
         name = "Hitsplat Tracker",
@@ -43,18 +44,22 @@ public class HitsplatTrackerPlugin extends Plugin {
     @Inject
     private HitsplatTrackerConfig config;
 
-    private final ArrayList<Hitsplat_> hits = new ArrayList<>();
+    private final ArrayList<Hitsplat_> hitsDealt = new ArrayList<>();
+    private final ArrayList<Hitsplat_> hitsReceived = new ArrayList<>();
 
     private HitsplatTrackerWriter writer;
 
-    private String filename;
-
     private String hitsplatEffects;
 
-    int biggestHit = -1;
-    int misses = 0;
-    int accurateHits = 0;
-    int totalHits = 0;
+    int biggestDealt = -1;
+    int missesDealt = 0;
+    int accurateDealt = 0;
+    int totalDealt = 0;
+
+    int biggestReceived = -1;
+    int missesReceived = 0;
+    int accurateReceived = 0;
+    int totalReceived = 0;
 
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH-mm-ss");
 
@@ -62,6 +67,7 @@ public class HitsplatTrackerPlugin extends Plugin {
     private int equippedWeaponTypeVarbit = -1;
     private int castingModeVarbit = -1;
     private int lastChangedWeapon = -1;
+    private String target;
     AttackStyle attackStyle;
 
     @Provides
@@ -71,6 +77,7 @@ public class HitsplatTrackerPlugin extends Plugin {
 
     @Override
     protected void startUp() throws Exception{
+        reset(Target.BOTH, true);
         writer = new HitsplatTrackerWriter();
         overlayManager.add(overlay);
     }
@@ -78,7 +85,7 @@ public class HitsplatTrackerPlugin extends Plugin {
     @Override
     protected void shutDown(){
         overlayManager.remove(overlay);
-        writeHits();
+        writeHits(Target.BOTH);
     }
 
     @Subscribe
@@ -87,19 +94,27 @@ public class HitsplatTrackerPlugin extends Plugin {
         if (overlayMenuEntry.getMenuAction() == MenuAction.RUNELITE_OVERLAY
                 && overlayMenuClicked.getOverlay() == overlay
                 && overlayMenuClicked.getEntry().getOption().equals(OPTION_CONFIGURE)) {
-            client.addChatMessage(ChatMessageType.ENGINE,"hittracker","clicked overlay option","hittracker");
+            client.addChatMessage(ChatMessageType.ENGINE,"hitTracker","clicked overlay option","hitTracker");
         }
     }
 
     @Subscribe
     public void onConfigChanged(ConfigChanged configChanged){
-        if (configChanged.getKey().equals("showInfobox")){
-            if (config.showInfobox()){
-                overlayManager.add(overlay);
+        if (configChanged.getGroup().equals("HitsplatTracker")) {
+            if (configChanged.getKey().equals("showInfobox")) {
+                if (config.showInfobox()) {
+                    overlayManager.add(overlay);
+                } else {
+                    overlayManager.remove(overlay);
+                }
             }
-            else
-            {
-                overlayManager.remove(overlay);
+            else if (configChanged.getKey().equals("target")) {
+                if (config.target() == Target.RECEIVED){
+                    writeHits(Target.DEALT);
+                }
+                if (config.target() == Target.DEALT){
+                    writeHits(Target.RECEIVED);
+                }
             }
         }
     }
@@ -108,24 +123,52 @@ public class HitsplatTrackerPlugin extends Plugin {
     public void onHitsplatApplied(HitsplatApplied hitsplatApplied){
         Actor target = hitsplatApplied.getActor();
         Hitsplat hitsplat = hitsplatApplied.getHitsplat();
-        if (!hitsplat.isMine() || target == client.getLocalPlayer()){
+        if (!hitsplat.isMine() || target.getName() == null){
             return;
         }
-        int amount = hitsplat.getAmount();
-        if (amount > biggestHit){
-            biggestHit = amount;
-            client.addChatMessage(ChatMessageType.ENGINE,"HitTracker","new biggest hitsplat: " + biggestHit, "HitTracker");
-        }
-        hits.add(new Hitsplat_(amount, hitsplatEffects));
-        if (amount > 0){
-            accurateHits += 1;
-        }
-        else if (amount == 0){
-            if (attackStyle == CASTING || attackStyle == DEFENSIVE_CASTING){
-                accurateHits += 1;
+        if (target == client.getLocalPlayer()){
+            if (config.target() == HitsplatTrackerConfig.Target.DEALT){
+                return;
             }
-            else {
-                misses += 1;
+            int amount = hitsplat.getAmount();
+            if (amount > biggestReceived){
+                biggestReceived = amount;
+                client.addChatMessage(ChatMessageType.ENGINE,"HitTracker","new biggest hit received: " + biggestReceived, "HitTracker");
+            }
+            hitsReceived.add(new Hitsplat_(amount, hitsplatEffects));
+            if (amount > 0){
+                accurateReceived += 1;
+            }
+            else (missesDealt) += 1;
+
+            //TODO: make a function for the above/below stuff?
+        }
+        else {
+            if (config.target() == HitsplatTrackerConfig.Target.RECEIVED) {
+                return;
+            }
+            if (!Objects.equals(target.getName(), this.target)){
+
+                // Player dealt hitsplat to a new mob, write hits then change target.
+                writeHits(Target.DEALT);
+                this.target = target.getName();
+            }
+            int amount = hitsplat.getAmount();
+            if (amount > biggestDealt){
+                biggestDealt = amount;
+                client.addChatMessage(ChatMessageType.ENGINE,"HitTracker","new biggest hit dealt: " + biggestDealt, "HitTracker");
+            }
+            hitsDealt.add(new Hitsplat_(amount, hitsplatEffects));
+            if (amount > 0){
+                accurateDealt += 1;
+            }
+            else if (amount == 0){
+                if (attackStyle == CASTING || attackStyle == DEFENSIVE_CASTING){
+                    accurateDealt += 1;
+                }
+                else {
+                    missesDealt += 1;
+                }
             }
         }
         hitsplatEffects = "";
@@ -133,18 +176,19 @@ public class HitsplatTrackerPlugin extends Plugin {
 
     @Subscribe
     public void onGraphicChanged(GraphicChanged graphicChanged){
-        if (graphicChanged.getActor().getName() != null){
+        if (graphicChanged.getActor().getName() != null && Objects.equals(graphicChanged.getActor().getName(), target)){
             // ahrims head
             if (graphicChanged.getActor().getGraphic() == 400){
                 hitsplatEffects += "ahrims ";
             }
-            //TODO: add opal/pearl/diamond/dragonstone/onyx bolt effects, check if they linger till next attack.
+            // TODO: add opal/pearl/diamond/dragonstone/onyx bolt effects
+            // TODO: check spotanim frame to figure out if this graphic is lingering from a previous attack
             // keris? gadderhammer?
             //
 
-            else if (graphicChanged.getActor().getGraphic() == 85){ // TODO: CHECK THIS IS CORRECT
-                hits.add(new Hitsplat_(-1, "splash"));
-                misses += 1;
+            else if (graphicChanged.getActor().getGraphic() == 85){
+                hitsDealt.add(new Hitsplat_(-1, "splash"));
+                missesDealt += 1;
             }
         }
     }
@@ -159,9 +203,10 @@ public class HitsplatTrackerPlugin extends Plugin {
         if (attackStyleVarbit != currentAttackStyleVarbit || equippedWeaponTypeVarbit != currentEquippedWeaponTypeVarbit || castingModeVarbit != currentCastingModeVarbit)
         {
             if (lastChangedWeapon != client.getTickCount()) {
+                //TODO: figure out why this runs 3 times. 1 for each varbit that is changed probably, how to fix?
                 client.addChatMessage(ChatMessageType.ENGINE, "HitTracker", "Weapon or attack style changed", "HitTracker");
                 lastChangedWeapon = client.getTickCount();
-                writeHits();
+                writeHits(Target.DEALT);
             }
             // TODO: check if below stuff can go inside the above check with some print tests
             attackStyleVarbit = currentAttackStyleVarbit;
@@ -169,6 +214,31 @@ public class HitsplatTrackerPlugin extends Plugin {
             castingModeVarbit = currentCastingModeVarbit;
             updateAttackStyle(equippedWeaponTypeVarbit, attackStyleVarbit,
                     castingModeVarbit);
+        }
+    }
+
+    private void reset(HitsplatTrackerConfig.Target target, boolean varbits){
+        if (target != Target.RECEIVED){
+            hitsDealt.clear();
+            biggestDealt = -1;
+            totalDealt = 0;
+            accurateDealt = 0;
+            missesDealt = 0;
+            hitsplatEffects = "";
+        }
+        if (target != Target.DEALT) {
+            hitsReceived.clear();
+            biggestReceived = -1;
+            totalReceived = 0;
+            accurateReceived = 0;
+            missesReceived = 0;
+        }
+
+        if (varbits){
+            attackStyleVarbit = -1;
+            equippedWeaponTypeVarbit = -1;
+            castingModeVarbit = -1;
+            lastChangedWeapon = -1;
         }
     }
 
@@ -189,29 +259,52 @@ public class HitsplatTrackerPlugin extends Plugin {
         }
     }
 
-    private void writeHits(){
-        if (hits.size() > 0) {
-            writer.toFile(filename, ToCSV());
-            hits.clear();
+    private void writeHits(Target target){
+        String filename = formatter.format(LocalDateTime.now());
+
+        if (target != Target.DEALT){ // received or both
+            if (hitsReceived.size() > 0) {
+                writer.toFile(filename, ToCSV(Target.RECEIVED));
+            }
         }
-        filename = formatter.format(LocalDateTime.now());
+        if (target != Target.RECEIVED){ // dealt or both
+            if (hitsDealt.size() > 0) {
+                filename += " " + this.target;
+                writer.toFile(filename, ToCSV(Target.DEALT));
+            }
+        }
+        reset(target, false);
     }
 
-    public String ToCSV()
+    public String ToCSV(Target target)
     {
+        if (target == Target.BOTH){
+            // TODO: make this handle properly
+            return null;
+        }
         StringBuilder csv = new StringBuilder();
         csv.append("amount,effects");
         csv.append("\n");
 
-        for (Hitsplat_ hit : hits)
-        {
-            csv.append("").append(hit.amount).append(",").append(hit.effects).append("\n");
+        if (target == Target.DEALT) {
+            for (Hitsplat_ hit : hitsDealt) {
+                csv.append(hit.amount).append(",").append(hit.effects).append("\n");
+            }
+            csv.append("total hits,").append(totalDealt).append("\n");
+            csv.append("accurate,").append(accurateDealt).append("\n");
+            csv.append("misses,").append(missesDealt).append("\n");
+            csv.append("attack style,").append(attackStyle).append("\n");
+            csv.append("weapon type,").append(WeaponType.getWeaponType(equippedWeaponTypeVarbit).toString()).append("\n");
+            csv.append("target,").append(this.target);
         }
-        csv.append("total hits,").append(totalHits).append("\n");
-        csv.append("accurate,").append(accurateHits).append("\n");
-        csv.append("misses,").append(misses).append("\n");
-        csv.append("attack style,").append(attackStyle).append("\n");
-        csv.append("weapon type,").append(WeaponType.getWeaponType(equippedWeaponTypeVarbit).toString()).append("\n");
+        if (target == Target.RECEIVED) {
+            for (Hitsplat_ hit : hitsReceived) {
+                csv.append(hit.amount).append(",").append(hit.effects).append("\n");
+            }
+            csv.append("total hits,").append(totalReceived).append("\n");
+            csv.append("accurate,").append(accurateReceived).append("\n");
+            csv.append("misses,").append(missesReceived).append("\n");
+        }
         return csv.toString();
     }
 

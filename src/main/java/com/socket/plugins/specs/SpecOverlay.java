@@ -47,32 +47,32 @@ extends Overlay {
     }
 
     public void addOverlay(String player, SpecialIcon icon) {
-        if (this.config.showHitOverlay()) {
+        if (config.showHitOverlay()) {
             ArrayList<SpecialIcon> icons = new ArrayList<>();
-            if (this.drawings.containsKey(player)) {
-                icons = this.drawings.get(player);
+            if (drawings.containsKey(player)) {
+                icons = drawings.get(player);
             }
             icons.add(icon);
-            this.drawings.put(player, icons);
+            drawings.put(player, icons);
         }
     }
 
     public Dimension render(Graphics2D graphics) {
         ArrayList<String> removePlayers = new ArrayList<>();
         HashMap<String, LocalPoint> locations = new HashMap<>();
-        for (Player player : this.client.getPlayers()) {
+        for (Player player : client.getPlayers()) {
             locations.put(player.getName(), player.getLocalLocation());
         }
-        for (String playerName : this.drawings.keySet()) {
+        for (String playerName : drawings.keySet()) {
             LocalPoint center = locations.get(playerName);
             if (center != null) {
-                ArrayList<SpecialIcon> icons = this.drawings.get(playerName);
+                ArrayList<SpecialIcon> icons = drawings.get(playerName);
                 ArrayList<SpecialIcon> removeIcons = new ArrayList<>();
                 int currentHeight = 200;
                 for (int i = icons.size() - 1; i >= 0; --i) {
                     SpecialIcon icon = icons.get(i);
                     long elapsedTime = System.currentTimeMillis() - icon.getStartTime();
-                    int fadeDelay = Math.max(this.config.getFadeDelay(), 1);
+                    int fadeDelay = Math.max(config.getFadeDelay(), 1);
                     long timeRemaining = (long)fadeDelay - elapsedTime;
                     if (timeRemaining <= 0L) {
                         removeIcons.add(icon);
@@ -81,12 +81,12 @@ extends Overlay {
                     float opacity = (float)timeRemaining / (float)fadeDelay;
                     float thresh = Math.min(opacity + 0.2f, 1.0f);
                     graphics.setComposite(AlphaComposite.getInstance(3, thresh));
-                    int maxHeight = Math.max(this.config.getMaxHeight(), 1);
+                    int maxHeight = Math.max(config.getMaxHeight(), 1);
                     int updatedHeight = maxHeight - (int)((float)maxHeight * thresh);
-                    Point drawPoint = Perspective.getCanvasImageLocation(this.client, center, icon.getImage(), currentHeight + updatedHeight);
+                    Point drawPoint = Perspective.getCanvasImageLocation(client, center, icon.getImage(), currentHeight + updatedHeight);
                     graphics.drawImage(icon.getImage(), drawPoint.getX(), drawPoint.getY(), null);
                     if (icon.getText() != null) {
-                        Point textPoint = Perspective.getCanvasTextLocation(this.client, graphics, center, icon.getText(), currentHeight + updatedHeight);
+                        Point textPoint = Perspective.getCanvasTextLocation(client, graphics, center, icon.getText(), currentHeight + updatedHeight);
                         graphics.setFont(new Font("Arial", 1, 16));
                         Point canvasCenterPoint = new Point(textPoint.getX(), textPoint.getY());
                         Point canvasCenterPointShadow = new Point(textPoint.getX() + 1, textPoint.getY() + 1);

@@ -16,7 +16,7 @@ public class HitsplatTrackerWriter {
 
         dir.mkdirs();
 
-        try (FileWriter fw = new FileWriter(new File(dir, filename)))
+        try (FileWriter fw = new FileWriter(new File(dir, filename+".log")))
         {
             fw.write(contents);
         }
