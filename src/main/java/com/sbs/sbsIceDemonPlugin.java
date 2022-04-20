@@ -26,7 +26,6 @@ import static com.google.common.base.Predicates.alwaysTrue;
 )
 public class sbsIceDemonPlugin extends Plugin
 {
-
 	@Inject
 	private Client client;
 	@Inject
