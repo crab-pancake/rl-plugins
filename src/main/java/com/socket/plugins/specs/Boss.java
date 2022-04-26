@@ -21,7 +21,7 @@ enum Boss {
     KALPHITE_QUEEN(128, 963, 965, 4303, 4304, 6500, 6501),
     KING_BLACK_DRAGON(239, 2642, 6502),
     KRIL_TSUTSAROTH(3129, 6495),
-    VENETENATIS(6504, 6610),
+    VENENATIS(6504, 6610),
     VETION(6611, 6612),
     MAIDEN(8360,8361,8362,8363,10822,10823,10824),
     SOTETSEG(8387, 8388, 10867, 10868, 10864, 10865),
@@ -41,6 +41,7 @@ enum Boss {
         }
         return null;
     }
+
     public Set<Integer> getIds() {
         return this.ids;
     }

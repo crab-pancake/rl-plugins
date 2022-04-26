@@ -51,12 +51,12 @@ public class HitsplatTrackerPlugin extends Plugin {
 
     private String hitsplatEffects;
 
-    int biggestDealt = -1;
+    int biggestDealt = 0;
     int missesDealt = 0;
     int accurateDealt = 0;
     int totalDealt = 0;
 
-    int biggestReceived = -1;
+    int biggestReceived = 0;
     int missesReceived = 0;
     int accurateReceived = 0;
     int totalReceived = 0;
@@ -130,6 +130,8 @@ public class HitsplatTrackerPlugin extends Plugin {
             if (config.target() == HitsplatTrackerConfig.Target.DEALT){
                 return;
             }
+            totalReceived += 1;
+
             int amount = hitsplat.getAmount();
             if (amount > biggestReceived){
                 biggestReceived = amount;
@@ -139,9 +141,9 @@ public class HitsplatTrackerPlugin extends Plugin {
             if (amount > 0){
                 accurateReceived += 1;
             }
-            else (missesDealt) += 1;
-
-            //TODO: make a function for the above/below stuff?
+            else {
+                (missesReceived) += 1;
+            }
         }
         else {
             if (config.target() == HitsplatTrackerConfig.Target.RECEIVED) {
@@ -150,9 +152,11 @@ public class HitsplatTrackerPlugin extends Plugin {
             if (!Objects.equals(target.getName(), this.target)){
 
                 // Player dealt hitsplat to a new mob, write hits then change target.
-                writeHits(Target.DEALT);
+                writeHits(Target.BOTH);
                 this.target = target.getName();
             }
+            totalDealt += 1;
+
             int amount = hitsplat.getAmount();
             if (amount > biggestDealt){
                 biggestDealt = amount;
@@ -189,6 +193,7 @@ public class HitsplatTrackerPlugin extends Plugin {
             else if (graphicChanged.getActor().getGraphic() == 85){
                 hitsDealt.add(new Hitsplat_(-1, "splash"));
                 missesDealt += 1;
+                totalDealt += 1;
             }
         }
     }
@@ -204,9 +209,9 @@ public class HitsplatTrackerPlugin extends Plugin {
         {
             if (lastChangedWeapon != client.getTickCount()) {
                 //TODO: figure out why this runs 3 times. 1 for each varbit that is changed probably, how to fix?
-                client.addChatMessage(ChatMessageType.ENGINE, "HitTracker", "Weapon or attack style changed", "HitTracker");
-                lastChangedWeapon = client.getTickCount();
+//                log.info("weapon or attack style changed");
                 writeHits(Target.DEALT);
+                lastChangedWeapon = client.getTickCount();
             }
             // TODO: check if below stuff can go inside the above check with some print tests
             attackStyleVarbit = currentAttackStyleVarbit;
@@ -260,17 +265,18 @@ public class HitsplatTrackerPlugin extends Plugin {
     }
 
     private void writeHits(Target target){
+//        log.info("writing hits");
         String filename = formatter.format(LocalDateTime.now());
 
         if (target != Target.DEALT){ // received or both
             if (hitsReceived.size() > 0) {
-                writer.toFile(filename, ToCSV(Target.RECEIVED));
+                writer.toFile(filename + " R", ToCSV(Target.RECEIVED));
             }
         }
         if (target != Target.RECEIVED){ // dealt or both
             if (hitsDealt.size() > 0) {
                 filename += " " + this.target;
-                writer.toFile(filename, ToCSV(Target.DEALT));
+                writer.toFile(filename + " D", ToCSV(Target.DEALT));
             }
         }
         reset(target, false);

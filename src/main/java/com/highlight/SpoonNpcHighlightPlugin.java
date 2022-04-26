@@ -65,7 +65,7 @@ public class SpoonNpcHighlightPlugin extends Plugin
     public int turboTileWidth = 0;
     public int turboOutlineWidth = 0;
     public int turboOutlineFeather = 0;
-    private static final Set<MenuAction> NPC_MENU_ACTIONS = ImmutableSet.of(MenuAction.NPC_FIRST_OPTION, MenuAction.NPC_SECOND_OPTION, MenuAction.NPC_THIRD_OPTION, MenuAction.NPC_FOURTH_OPTION, MenuAction.NPC_FIFTH_OPTION, MenuAction.SPELL_CAST_ON_NPC, MenuAction.ITEM_USE_ON_NPC);
+    private static final Set<MenuAction> NPC_MENU_ACTIONS = ImmutableSet.of(MenuAction.NPC_FIRST_OPTION, MenuAction.NPC_SECOND_OPTION, MenuAction.NPC_THIRD_OPTION, MenuAction.NPC_FOURTH_OPTION, MenuAction.NPC_FIFTH_OPTION, MenuAction.WIDGET_TARGET_ON_NPC, MenuAction.ITEM_USE_ON_NPC);
     
     @Provides
     SpoonNpcHighlightConfig providesConfig(final ConfigManager configManager) {

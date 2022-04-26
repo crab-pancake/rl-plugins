@@ -1,6 +1,6 @@
 package com.highlight;
 
-import com.dmgtracker.HitsplatTrackerPlugin;
+import com.LineOfSight.LineOfSightPlugin;
 import net.runelite.client.RuneLite;
 import net.runelite.client.externalplugins.ExternalPluginManager;
 
@@ -9,7 +9,7 @@ public class PluginTest
 {
 	public static void main(String[] args) throws Exception
 	{
-		ExternalPluginManager.loadBuiltin(HitsplatTrackerPlugin.class);
+		ExternalPluginManager.loadBuiltin(LineOfSightPlugin.class);
 		RuneLite.main(args);
 	}
 }
