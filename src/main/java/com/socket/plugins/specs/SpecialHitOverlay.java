@@ -29,17 +29,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SpecOverlay
-extends Overlay {
+public class SpecialHitOverlay extends Overlay {
     private final Client client;
-    private final SpecPlugin plugin;
     private final SpecConfig config;
-    private Map<String, ArrayList<SpecialIcon>> drawings = new HashMap<>();
+    private final Map<String, ArrayList<SpecialIcon>> drawings = new HashMap<>();
 
     @Inject
-    private SpecOverlay(Client client, SpecPlugin plugin, SpecConfig config) {
+    private SpecialHitOverlay(Client client, SpecPlugin plugin, SpecConfig config) {
         this.client = client;
-        this.plugin = plugin;
         this.config = config;
         this.setPosition(OverlayPosition.DYNAMIC);
         this.setPriority(OverlayPriority.HIGH);
@@ -105,7 +102,7 @@ extends Overlay {
             removePlayers.add(playerName);
         }
         for (String playerName : removePlayers) {
-            this.drawings.remove(playerName);
+            drawings.remove(playerName);
         }
         return null;
     }

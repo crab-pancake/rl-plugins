@@ -12,16 +12,15 @@ import net.runelite.client.ui.overlay.infobox.Counter;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
-class SpecCounter
-extends Counter {
-    private final SpecPlugin plugin;
-    private SpecialWeapon weapon;
+// infobox
+class SpecialCounter extends Counter {
+    private final SpecialWeapon weapon;
     private final Map<String, Integer> partySpecs = new HashMap<>();
 
-    SpecCounter(BufferedImage image, SpecPlugin plugin, int hitValue, SpecialWeapon weapon) {
+    SpecialCounter(BufferedImage image, SpecPlugin plugin, int hitValue, SpecialWeapon weapon) {
         super(image, plugin, hitValue);
-        this.plugin = plugin;
         this.weapon = weapon;
     }
 
@@ -37,13 +36,17 @@ extends Counter {
         }
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(buildTooltip(hitValue));
+
         for (Map.Entry<String, Integer> entry : partySpecs.entrySet()) {
-            stringBuilder.append("</br>").append(entry.getKey() == null ? "You" : entry.getKey()).append(": ").append(this.buildTooltip(entry.getValue()));
+            stringBuilder.append("</br>").append(Objects.equals(entry.getKey(), "") ? "You" : entry.getKey()).append(": ").append(this.buildTooltip(entry.getValue()));
         }
         return stringBuilder.toString();
     }
 
     private String buildTooltip(int hitValue) {
+        if (weapon == SpecialWeapon.VULNERABILITY){
+            return weapon.getName() + " landed.";
+        }
         if (!weapon.isDamage()) {
             if (hitValue == 1) {
                 return weapon.getName() + " special has hit once.";

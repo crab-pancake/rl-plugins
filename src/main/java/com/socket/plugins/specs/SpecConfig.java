@@ -37,4 +37,10 @@ public interface SpecConfig extends Config
 	{
 		return true;
 	}
+
+	@ConfigItem(keyName = "debug", name = "Debug", description = "Log debug text", hidden = true)
+	default boolean debug()
+	{
+		return true;
+	}
 }

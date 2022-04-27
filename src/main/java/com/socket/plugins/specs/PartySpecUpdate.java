@@ -28,9 +28,10 @@ import lombok.EqualsAndHashCode;
 import lombok.Value;
 import net.runelite.http.api.ws.messages.party.PartyMemberMessage;
 
+// discord party plugin
 @Value
 @EqualsAndHashCode(callSuper = true)
-public class SpecCounterUpdate extends PartyMemberMessage
+public class PartySpecUpdate extends PartyMemberMessage
 {
     int npcId;
     SpecialWeapon weapon;

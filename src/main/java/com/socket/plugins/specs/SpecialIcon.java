@@ -3,29 +3,23 @@
  */
 package com.socket.plugins.specs;
 
+import lombok.Getter;
+
 import java.awt.image.BufferedImage;
 
+
 public class SpecialIcon {
-    private BufferedImage image;
-    private String text;
-    private long startTime;
+    @Getter
+    private final BufferedImage image;
+    @Getter
+    private final String text;
+    @Getter
+    private final long startTime;
 
     public SpecialIcon(BufferedImage image, String text, long startTime) {
         this.image = image;
         this.text = text;
         this.startTime = startTime;
-    }
-
-    public BufferedImage getImage() {
-        return this.image;
-    }
-
-    public String getText() {
-        return this.text;
-    }
-
-    public long getStartTime() {
-        return this.startTime;
     }
 }
 
