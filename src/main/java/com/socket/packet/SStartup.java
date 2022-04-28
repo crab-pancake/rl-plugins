@@ -3,6 +3,6 @@
  */
 package com.socket.packet;
 
-public class SocketStartup {
+public class SStartup {
 }
 

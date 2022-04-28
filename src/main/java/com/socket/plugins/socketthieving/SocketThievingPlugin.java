@@ -62,9 +62,8 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import com.socket.org.json.JSONArray;
 import com.socket.org.json.JSONObject;
-import com.socket.packet.SocketBroadcastPacket;
-import com.socket.packet.SocketReceivePacket;
-import net.runelite.client.ui.overlay.Overlay;
+import com.socket.packet.SSend;
+import com.socket.packet.SReceive;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.Text;
 
@@ -317,7 +316,7 @@ extends Plugin {
         data.put("grubs", delta);
         JSONObject payload = new JSONObject();
         payload.put("socketgrubs", data);
-        this.eventBus.post(new SocketBroadcastPacket(payload));
+        this.eventBus.post(new SSend(payload));
         this.socketGrubs += delta;
         this.num_grubs += delta;
         this.last_grubs = grubs;
@@ -439,11 +438,11 @@ extends Plugin {
         data.put(jsonmsg);
         JSONObject send = new JSONObject();
         send.put("socketgrubsalt", data);
-        this.eventBus.post(new SocketBroadcastPacket(send));
+        this.eventBus.post(new SSend(send));
     }
 
     @Subscribe
-    public void onSocketReceivePacket(SocketReceivePacket event) {
+    public void onSReceive(SReceive event) {
         try {
             JSONObject payload = event.getPayload();
             if (payload.has("socketgrubs")) {

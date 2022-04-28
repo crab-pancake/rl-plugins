@@ -3,10 +3,10 @@
  */
 package com.socket.packet;
 
-public class SocketPlayerJoin {
+public class SLeave {
     private String playerName;
 
-    public SocketPlayerJoin(String playerName) {
+    public SLeave(String playerName) {
         this.playerName = playerName;
     }
 

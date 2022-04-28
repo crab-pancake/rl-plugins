@@ -36,9 +36,8 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.plugins.PluginManager;
 import com.socket.packet.SocketMembersUpdate;
-import com.socket.packet.SocketPlayerJoin;
-import com.socket.packet.SocketShutdown;
-import net.runelite.client.ui.overlay.Overlay;
+import com.socket.packet.SJoin;
+import com.socket.packet.SShutdown;
 import net.runelite.client.ui.overlay.OverlayManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,7 +87,7 @@ extends Plugin {
     }
 
     @Subscribe
-    public void onSocketPlayerJoin(SocketPlayerJoin event) {
+    public void onSJoin(SJoin event) {
         this.names.add(event.getPlayerName());
         if (event.getPlayerName().equals(Objects.requireNonNull(this.client.getLocalPlayer()).getName())) {
             this.names.clear();
@@ -105,7 +104,7 @@ extends Plugin {
     }
 
     @Subscribe
-    public void onSocketShutdown(SocketShutdown event) {
+    public void onSShuddown(SShutdown event) {
         this.names.clear();
     }
 

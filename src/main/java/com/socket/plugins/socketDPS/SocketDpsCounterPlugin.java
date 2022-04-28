@@ -45,8 +45,8 @@ import javax.inject.Inject;
 
 import com.socket.SocketPlugin;
 import com.socket.org.json.JSONObject;
-import com.socket.packet.SocketBroadcastPacket;
-import com.socket.packet.SocketReceivePacket;
+import com.socket.packet.SSend;
+import com.socket.packet.SReceive;
 import net.runelite.api.Actor;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
@@ -65,7 +65,6 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDependency;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.plugins.PluginManager;
-import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -151,7 +150,7 @@ extends Plugin {
                 data.put("world", this.client.getWorld());
                 JSONObject payload = new JSONObject();
                 payload.put("dps-counter", data);
-                this.eventBus.post(new SocketBroadcastPacket(payload));
+                this.eventBus.post(new SSend(payload));
                 this.members = this.sortByValue(this.members);
             }
         }
@@ -178,13 +177,13 @@ extends Plugin {
                 data.put("world", this.client.getWorld());
                 JSONObject payload = new JSONObject();
                 payload.put("dps-clear", data);
-                this.eventBus.post(new SocketBroadcastPacket(payload));
+                this.eventBus.post(new SSend(payload));
             }
         }
     }
 
     @Subscribe
-    public void onSocketReceivePacket(SocketReceivePacket event) {
+    public void onSReceive(SReceive event) {
         try {
             if (this.client.getGameState() == GameState.LOGGED_IN && this.client.getLocalPlayer() != null) {
                 JSONObject payload = event.getPayload();

@@ -17,9 +17,9 @@ import com.socket.org.json.JSONArray;
 import com.socket.org.json.JSONException;
 import com.socket.org.json.JSONObject;
 import com.socket.packet.SocketMembersUpdate;
-import com.socket.packet.SocketPlayerJoin;
-import com.socket.packet.SocketPlayerLeave;
-import com.socket.packet.SocketReceivePacket;
+import com.socket.packet.SJoin;
+import com.socket.packet.SLeave;
+import com.socket.packet.SReceive;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.client.callback.ClientThread;
@@ -133,7 +133,7 @@ implements Runnable {
                     if (header.equals("BROADCAST")) {
                         message = AES256.decrypt(secret, data.getString("payload"));
                         JSONObject payload = new JSONObject(message);
-                        this.clientThread.invoke(() -> this.eventBus.post(new SocketReceivePacket(payload)));
+                        this.clientThread.invoke(() -> this.eventBus.post(new SReceive(payload)));
                         continue;
                     }
                     if (header.equals("JOIN")) {
@@ -146,7 +146,7 @@ implements Runnable {
                         membersArray = data.getJSONArray("party");
                         this.logMessage(SocketLog.INFO, this.mergeMembers(membersArray, secret));
                         try {
-                            this.eventBus.post(new SocketPlayerJoin(targetName));
+                            this.eventBus.post(new SJoin(targetName));
                             this.eventBus.post(new SocketMembersUpdate(this.mergeMembersAsList(membersArray, secret)));
                         }
                         catch (Exception exception) {}
@@ -158,7 +158,7 @@ implements Runnable {
                         membersArray = data.getJSONArray("party");
                         this.logMessage(SocketLog.ERROR, this.mergeMembers(membersArray, secret));
                         try {
-                            this.eventBus.post(new SocketPlayerLeave(targetName));
+                            this.eventBus.post(new SLeave(targetName));
                             this.eventBus.post(new SocketMembersUpdate(this.mergeMembersAsList(membersArray, secret)));
                         }
                         catch (Exception exception) {}

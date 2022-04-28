@@ -3,6 +3,6 @@
  */
 package com.socket.packet;
 
-public class SocketShutdown {
+public class SShutdown {
 }
 

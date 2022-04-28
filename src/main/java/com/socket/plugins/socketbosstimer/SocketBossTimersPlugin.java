@@ -25,15 +25,14 @@ package com.socket.plugins.socketbosstimer;
 
 import com.google.inject.Provides;
 import java.awt.Color;
-import java.awt.image.BufferedImage;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import javax.inject.Inject;
 
 import com.socket.org.json.JSONObject;
-import com.socket.packet.SocketBroadcastPacket;
-import com.socket.packet.SocketReceivePacket;
+import com.socket.packet.SSend;
+import com.socket.packet.SReceive;
 import net.runelite.api.Client;
 import net.runelite.api.NPC;
 import net.runelite.api.events.GameTick;
@@ -112,7 +111,7 @@ extends Plugin {
             data.put("name", this.client.getLocalPlayer().getName());
             JSONObject payload = new JSONObject();
             payload.put("socketrespawn", data);
-            this.eventBus.post(new SocketBroadcastPacket(payload));
+            this.eventBus.post(new SSend(payload));
         }
         if (!this.config.multiWorldTimers()) {
             this.infoBoxManager.removeIf(t -> t instanceof SocketRespawnTimer && ((SocketRespawnTimer) t).getBoss() == boss);
@@ -123,7 +122,7 @@ extends Plugin {
     }
 
     @Subscribe
-    public void onSocketReceivePacket(SocketReceivePacket event) {
+    public void onSReceive(SReceive event) {
         try {
             JSONObject payload = event.getPayload();
             if (payload.has("socketrespawn")) {

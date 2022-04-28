@@ -29,8 +29,8 @@ package com.socket.plugins.chat;
 import com.google.inject.Provides;
 import com.socket.org.json.JSONArray;
 import com.socket.org.json.JSONObject;
-import com.socket.packet.SocketBroadcastPacket;
-import com.socket.packet.SocketReceivePacket;
+import com.socket.packet.SSend;
+import com.socket.packet.SReceive;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.VarClientStr;
@@ -174,7 +174,7 @@ implements KeyListener {
             data.put(jsonmsg);
             JSONObject send = new JSONObject();
             send.put("sChat", data);
-            this.eventBus.post(new SocketBroadcastPacket(send));
+            this.eventBus.post(new SSend(send));
             if (this.config.singleText()) {
                 this.typing = false;
             }
@@ -182,7 +182,7 @@ implements KeyListener {
     }
 
     @Subscribe
-    public void onSocketReceivePacket(SocketReceivePacket event) {
+    public void onSReceive(SReceive event) {
         try {
             JSONObject payload = event.getPayload();
             if (!payload.has("sChat")) {

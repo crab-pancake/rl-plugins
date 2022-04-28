@@ -45,10 +45,10 @@ package com.socket.plugins.socketdefence;
 
 import com.google.inject.Provides;
 import com.socket.org.json.JSONObject;
-import com.socket.packet.SocketBroadcastPacket;
+import com.socket.packet.SSend;
 import com.socket.packet.SocketMembersUpdate;
-import com.socket.packet.SocketReceivePacket;
-import com.socket.packet.SocketShutdown;
+import com.socket.packet.SReceive;
+import com.socket.packet.SShutdown;
 import net.runelite.api.*;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.*;
@@ -207,7 +207,7 @@ extends Plugin {
             data.put("hit", damage);
             JSONObject payload = new JSONObject();
             payload.put("socketdefence", data);
-            this.eventBus.post(new SocketBroadcastPacket(payload));
+            this.eventBus.post(new SSend(payload));
             this.specWep = "";
         }
     }
@@ -231,7 +231,7 @@ extends Plugin {
             data.put("player", this.client.getLocalPlayer().getName());
             JSONObject payload = new JSONObject();
             payload.put("socketdefencebossdead", data);
-            this.eventBus.post(new SocketBroadcastPacket(payload));
+            this.eventBus.post(new SSend(payload));
             this.reset();
         }
     }
@@ -253,7 +253,7 @@ extends Plugin {
             data.put("hit", event.getHitsplat().getAmount());
             JSONObject payload = new JSONObject();
             payload.put("socketdefence", data);
-            this.eventBus.post(new SocketBroadcastPacket(payload));
+            this.eventBus.post(new SSend(payload));
             this.specWep = "";
         }
     }
@@ -271,13 +271,13 @@ extends Plugin {
             data.put("player", this.client.getLocalPlayer().getName());
             JSONObject payload = new JSONObject();
             payload.put("socketdefencebossdead", data);
-            this.eventBus.post(new SocketBroadcastPacket(payload));
+            this.eventBus.post(new SSend(payload));
             this.reset();
         }
     }
 
     @Subscribe
-    public void onSocketReceivePacket(SocketReceivePacket event) {
+    public void onSReceive(SReceive event) {
         try {
             JSONObject payload = event.getPayload();
             if (payload.has("socketdefence")) {
@@ -383,7 +383,7 @@ extends Plugin {
     }
 
     @Subscribe
-    private void onSocketShutdown(SocketShutdown event) {
+    private void onSShuddown(SShutdown event) {
         this.socketPlayerNames.clear();
     }
 
@@ -404,7 +404,7 @@ extends Plugin {
             data.put("hit", 0);
             JSONObject payload = new JSONObject();
             payload.put("socketdefence", data);
-            this.eventBus.post(new SocketBroadcastPacket(payload));
+            this.eventBus.post(new SSend(payload));
         }
     }
 

@@ -43,7 +43,6 @@ import net.runelite.api.NPC;
 import net.runelite.api.Player;
 import net.runelite.api.Point;
 import net.runelite.api.Tile;
-import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.GroundObjectSpawned;
@@ -57,9 +56,8 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import com.socket.org.json.JSONArray;
 import com.socket.org.json.JSONObject;
-import com.socket.packet.SocketBroadcastPacket;
-import com.socket.packet.SocketReceivePacket;
-import net.runelite.client.ui.overlay.Overlay;
+import com.socket.packet.SSend;
+import com.socket.packet.SReceive;
 import net.runelite.client.ui.overlay.OverlayManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -119,7 +117,7 @@ extends Plugin {
         if (event.getProjectile().getId() == 1604 && event.getProjectile().getEndCycle() - event.getProjectile().getStartCycle() == event.getProjectile().getRemainingCycles()) {
             JSONObject data = new JSONObject();
             data.put("sotetseg-extended-ball", "");
-            this.eventBus.post(new SocketBroadcastPacket(data));
+            this.eventBus.post(new SSend(data));
         }
     }
 
@@ -195,14 +193,14 @@ extends Plugin {
                 payload.put("sotetseg-extended", data);
                 JSONObject payloadUnder = new JSONObject();
                 payloadUnder.put("sotetseg-extended", dataUnder);
-                this.eventBus.post(new SocketBroadcastPacket(payload));
-                this.eventBus.post(new SocketBroadcastPacket(payloadUnder));
+                this.eventBus.post(new SSend(payload));
+                this.eventBus.post(new SSend(payloadUnder));
             }
         }
     }
 
     @Subscribe
-    public void onSocketReceivePacket(SocketReceivePacket event) {
+    public void onSReceive(SReceive event) {
         try {
             JSONObject payload = event.getPayload();
             if (!payload.has("sotetseg-extended") && !payload.has("sotetseg-extended-ball")) {

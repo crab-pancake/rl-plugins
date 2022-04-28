@@ -28,15 +28,15 @@
 package com.socket.plugins.playerstatusextended;
 
 import com.google.inject.Provides;
-import java.awt.Color;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import javax.inject.Inject;
 
 import com.socket.org.json.JSONArray;
 import com.socket.org.json.JSONObject;
-import com.socket.packet.SocketBroadcastPacket;
-import com.socket.packet.SocketReceivePacket;
+import com.socket.packet.SSend;
+import com.socket.packet.SReceive;
 import net.runelite.api.Actor;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
@@ -264,11 +264,11 @@ extends Plugin {
         data.put(json$);
         JSONObject send = new JSONObject();
         send.put("sLeech", data);
-        this.eventBus.post(new SocketBroadcastPacket(send));
+        this.eventBus.post(new SSend(send));
     }
 
     @Subscribe
-    public void onSocketReceivePacket(SocketReceivePacket event) {
+    public void onSReceive(SReceive event) {
         try {
             JSONObject payload = event.getPayload();
             if (!payload.has("sLeech")) {

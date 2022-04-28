@@ -70,8 +70,8 @@ import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import com.socket.org.json.JSONObject;
-import com.socket.packet.SocketBroadcastPacket;
-import com.socket.packet.SocketReceivePacket;
+import com.socket.packet.SSend;
+import com.socket.packet.SReceive;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
 import net.runelite.client.util.AsyncBufferedImage;
@@ -199,7 +199,7 @@ extends Plugin {
                 data.put("hit", damage);
                 JSONObject payload = new JSONObject();
                 payload.put("special-extended", data);
-                this.eventBus.post(new SocketBroadcastPacket(payload));
+                this.eventBus.post(new SSend(payload));
                 this.lastSpecTarget = null;
             }
         }
@@ -243,12 +243,13 @@ extends Plugin {
             data.put("hit", hit);
             JSONObject payload = new JSONObject();
             payload.put("special-extended", data);
-            this.eventBus.post(new SocketBroadcastPacket(payload));
+            this.eventBus.post(new SSend(payload));
         }
     }
 
     @Subscribe
-    public void onSocketReceivePacket(SocketReceivePacket event) {
+    public void onSReceive(SReceive event) {
+        System.out.println("received packet --------------------------");
         try {
             if (this.client.getGameState() != GameState.LOGGED_IN) {
                 return;
@@ -362,7 +363,7 @@ extends Plugin {
             this.removeCounters();
             JSONObject payload = new JSONObject();
             payload.put("special-extended-bossdead", "dead");
-            this.eventBus.post(new SocketBroadcastPacket(payload));
+            this.eventBus.post(new SSend(payload));
         }
     }
 }

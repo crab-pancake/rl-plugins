@@ -38,8 +38,8 @@ import javax.inject.Inject;
 
 import com.socket.org.json.JSONArray;
 import com.socket.org.json.JSONObject;
-import com.socket.packet.SocketBroadcastPacket;
-import com.socket.packet.SocketReceivePacket;
+import com.socket.packet.SSend;
+import com.socket.packet.SReceive;
 import com.socket.plugins.socketicedemon.util.Raids1Util;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
@@ -63,7 +63,6 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
-import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayManager;
 
 @PluginDescriptor(name="Socket - Ice Demon", description="Socket ice demon", tags={"xeric", "iceDemon", "chambers", "cox", "net/runelite/client/plugins/socket"})
@@ -290,7 +289,7 @@ extends Plugin {
                     data.put("kindling", diff);
                     JSONObject payload = new JSONObject();
                     payload.put("socketicecut", data);
-                    this.eventBus.post(new SocketBroadcastPacket(payload));
+                    this.eventBus.post(new SSend(payload));
                     this.teamTotalKindlingCut += diff;
                     if (this.teamTotalKindlingCut >= this.teamKindlingNeeded && this.config.dumpMsg()) {
                         if (!this.dumpKindling) {
@@ -316,7 +315,7 @@ extends Plugin {
                     data.put("kindling", this.lastKindling);
                     JSONObject payload = new JSONObject();
                     payload.put("socketicelight", data);
-                    this.eventBus.post(new SocketBroadcastPacket(payload));
+                    this.eventBus.post(new SSend(payload));
                     if (this.client.getVarbitValue(5424) == 1) {
                         if (this.lastKindling <= 17) {
                             this.client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "<col=ff0000> Are you daft, cunt?!", "");
@@ -380,11 +379,11 @@ extends Plugin {
         data.put(jsonmsg);
         JSONObject send = new JSONObject();
         send.put("socketicealt", data);
-        this.eventBus.post(new SocketBroadcastPacket(send));
+        this.eventBus.post(new SSend(send));
     }
 
     @Subscribe
-    public void onSocketReceivePacket(SocketReceivePacket event) {
+    public void onSReceive(SReceive event) {
         if (this.client.getVar(Varbits.IN_RAID) == 1) {
             try {
                 JSONObject payload = event.getPayload();

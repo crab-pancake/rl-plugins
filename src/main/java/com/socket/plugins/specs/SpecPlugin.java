@@ -2,8 +2,8 @@ package com.socket.plugins.specs;
 
 import com.google.inject.Provides;
 import com.socket.org.json.JSONObject;
-import com.socket.packet.SocketBroadcastPacket;
-import com.socket.packet.SocketReceivePacket;
+import com.socket.packet.SSend;
+import com.socket.packet.SReceive;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.*;
@@ -178,9 +178,10 @@ public class SpecPlugin extends Plugin
 
 	@Subscribe
 	public void onGraphicChanged(GraphicChanged event) {
+		if (config.vulnerability())
 		if (event.getActor().getName() != null && event.getActor().getGraphic() == 169) {
-			updateCounter("", SpecialWeapon.VULNERABILITY,0);
-			socketSend("",((NPC) event.getActor()).getId(), SpecialWeapon.VULNERABILITY, 0);
+			updateCounter("", SpecialWeapon.VULNERABILITY,"",1);
+			socketSend("",((NPC) event.getActor()).getId(), SpecialWeapon.VULNERABILITY, 1);
 		}
 	}
 
@@ -207,10 +208,6 @@ public class SpecPlugin extends Plugin
 	{
 		if (client.getGameState() != GameState.LOGGED_IN) return;
 
-		if (specialUsed) {
-			debug("ongametick: spec used " + lastTarget.getName());
-		}
-
 		if (lastSpecTick != -1 && lastSpecTick < client.getTickCount() - 6){
 			// reset: last spec occurred too long ago
 			clear();
@@ -219,7 +216,7 @@ public class SpecPlugin extends Plugin
 
 		if (specialUsed && lastTarget != null)
 		{
-			System.out.println("spec used and last spec target != null");
+			debug("spec used and last spec target != null");
 
 
 			int deltaExperience = specialHitpointsGained;  // TODO: check how this works with fake xp drops
@@ -244,7 +241,7 @@ public class SpecPlugin extends Plugin
 					}
 
 					String pName = client.getLocalPlayer().getName();
-					updateCounter(pName, specialWeapon, minSpecHit);
+					updateCounter(pName, specialWeapon, null, minSpecHit);
 
 					if (!party.getMembers().isEmpty())
 					{
@@ -299,7 +296,7 @@ public class SpecPlugin extends Plugin
 			int hit = getHit(specialWeapon, hitsplat);
 			log.debug("Special attack target: id: {} - target: {} - weapon: {} - amount: {}", interactingId, target.getName(), specialWeapon, hit);
 			String pName = Objects.requireNonNull(client.getLocalPlayer()).getName();
-			updateCounter(pName, specialWeapon, hit);
+			updateCounter(pName, specialWeapon, null, hit);
 
 			if (!party.getMembers().isEmpty())
 			{
@@ -329,7 +326,7 @@ public class SpecPlugin extends Plugin
 			removeCounters();
 			JSONObject payload = new JSONObject();
 			payload.put(identifier+"-bossdead", "dead");
-			eventBus.post(new SocketBroadcastPacket(payload));
+			eventBus.post(new SSend(payload));
 		}
 	}
 
@@ -343,7 +340,7 @@ public class SpecPlugin extends Plugin
 
 		JSONObject payload = new JSONObject();
 		payload.put(identifier, data);
-		eventBus.post(new SocketBroadcastPacket(payload));
+		eventBus.post(new SSend(payload));
 	}
 
 	private int checkInteracting()  // is this better than last target? probably, since multi form bosses are included
@@ -386,7 +383,7 @@ public class SpecPlugin extends Plugin
 	}
 
 	@Subscribe
-	public void onSocketReceivePacket(SocketReceivePacket event) {
+	public void onSReceive(SReceive event) {
 		try {
 			if (client.getGameState() != GameState.LOGGED_IN) {
 				return;
@@ -396,7 +393,7 @@ public class SpecPlugin extends Plugin
 			if (payload.has(identifier)) {
 				debug("received socket thing, identifier "+ identifier);
 				String pName = client.getLocalPlayer().getName();
-				JSONObject data = payload.getJSONObject(identifier);
+				JSONObject data = payload.getJSONObject("special-extended");
 				if (data.getString("player").equals(pName)) { // ignore own packets
 					return;
 				}
@@ -408,9 +405,9 @@ public class SpecPlugin extends Plugin
 						removeCounters();
 						addInteracting(targetId);
 					}
-					updateCounter(attacker, weapon, data.getInt("hit"));
+					updateCounter(attacker, weapon, attacker, data.getInt("hit"));
 				});
-			} else if (payload.has(identifier+"-bossdead")) {
+			} else if (payload.has("special-extended-bossdead")) {
 				removeCounters();
 			}
 		}
@@ -470,7 +467,7 @@ public class SpecPlugin extends Plugin
 			// Otherwise we only add the count if it is against a npc we are already tracking
 			if (interactedNpcIds.contains(event.getNpcId()))
 			{
-				updateCounter(name, event.getWeapon(), event.getHit());
+				updateCounter(name, event.getWeapon(), null, event.getHit());
 			}
 		});
 	}
@@ -494,7 +491,7 @@ public class SpecPlugin extends Plugin
 		return null;
 	}
 
-	private void updateCounter(String player, SpecialWeapon specialWeapon, int hit) {
+	private void updateCounter(String player, SpecialWeapon specialWeapon, String nullIfFromMe, int hit) {
 		debug("update counter");
 
 		if (specialWeapon == SpecialWeapon.BANDOS_GODSWORD_OR) {
@@ -509,6 +506,9 @@ public class SpecPlugin extends Plugin
 		SpecialCounter counter = specialCounter[specialWeapon.ordinal()];
 		BufferedImage image;
 		if (specialWeapon == SpecialWeapon.VULNERABILITY){
+			if (!config.vulnerability()) {
+				return;
+			}
 			IndexDataBase sprite = client.getIndexSprites();
 			image = Objects.requireNonNull(client.getSprites(sprite, 56, 0))[0].toBufferedImage();
 		}
@@ -527,14 +527,11 @@ public class SpecPlugin extends Plugin
 		}
 		// If in a party, add hit to partySpecs for the infobox tooltip. TODO: do this for vuln?
 		Map<String, Integer> partySpecs = counter.getPartySpecs();
-		if (!party.getMembers().isEmpty()) {
-			if (partySpecs.containsKey(player)) {
-				partySpecs.put(player, hit + partySpecs.get(player));
-			}
-			else {
-				partySpecs.put(player, hit);
-			}
-
+		if (partySpecs.containsKey(nullIfFromMe)) {
+			partySpecs.put(nullIfFromMe, hit + partySpecs.get(nullIfFromMe));
+		}
+		else {
+			partySpecs.put(nullIfFromMe, hit);
 		}
 	}
 

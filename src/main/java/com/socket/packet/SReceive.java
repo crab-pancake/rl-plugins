@@ -5,10 +5,10 @@ package com.socket.packet;
 
 import com.socket.org.json.JSONObject;
 
-public class SocketBroadcastPacket {
+public class SReceive {
     private final JSONObject payload;
 
-    public SocketBroadcastPacket(JSONObject payload) {
+    public SReceive(JSONObject payload) {
         this.payload = payload;
     }
 

@@ -35,9 +35,9 @@ import net.runelite.client.game.SpriteManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import com.socket.org.json.JSONObject;
-import com.socket.packet.SocketBroadcastPacket;
-import com.socket.packet.SocketPlayerLeave;
-import com.socket.packet.SocketReceivePacket;
+import com.socket.packet.SSend;
+import com.socket.packet.SLeave;
+import com.socket.packet.SReceive;
 import com.socket.plugins.playerstatus.gametimer.GameIndicator;
 import com.socket.plugins.playerstatus.gametimer.GameTimer;
 import com.socket.plugins.playerstatus.marker.AbstractMarker;
@@ -326,7 +326,7 @@ extends Plugin {
             JSONObject packet = new JSONObject();
             packet.put("name", name);
             packet.put("player-stats", status.toJSON());
-            this.eventBus.post(new SocketBroadcastPacket(packet));
+            this.eventBus.post(new SSend(packet));
             this.lastRefresh = 0;
         }
     }
@@ -359,7 +359,7 @@ extends Plugin {
         JSONObject packet = new JSONObject();
         packet.put("player-status-game-add", this.client.getLocalPlayer().getName());
         packet.put("effect-name", timer.name());
-        this.eventBus.post(new SocketBroadcastPacket(packet));
+        this.eventBus.post(new SSend(packet));
     }
 
     /*
@@ -394,7 +394,7 @@ extends Plugin {
         JSONObject packet = new JSONObject();
         packet.put("player-status-game-remove", this.client.getLocalPlayer().getName());
         packet.put("effect-name", timer.name());
-        this.eventBus.post(new SocketBroadcastPacket(packet));
+        this.eventBus.post(new SSend(packet));
     }
 
     /*
@@ -427,7 +427,7 @@ extends Plugin {
         JSONObject packet = new JSONObject();
         packet.put("player-status-indicator-add", this.client.getLocalPlayer().getName());
         packet.put("effect-name", gameIndicator.name());
-        this.eventBus.post(new SocketBroadcastPacket(packet));
+        this.eventBus.post(new SSend(packet));
     }
 
     /*
@@ -459,7 +459,7 @@ extends Plugin {
         JSONObject packet = new JSONObject();
         packet.put("player-status-indicator-remove", this.client.getLocalPlayer().getName());
         packet.put("effect-name", indicator.name());
-        this.eventBus.post(new SocketBroadcastPacket(packet));
+        this.eventBus.post(new SSend(packet));
     }
 
     /*
@@ -488,7 +488,7 @@ extends Plugin {
      * WARNING - Removed try catching itself - possible behaviour change.
      */
     @Subscribe
-    public void onSocketReceivePacket(SocketReceivePacket event) {
+    public void onSReceive(SReceive event) {
         block20: {
             try {
                 JSONObject payload = event.getPayload();
@@ -556,7 +556,7 @@ extends Plugin {
      * WARNING - Removed try catching itself - possible behaviour change.
      */
     @Subscribe
-    public void onSocketPlayerLeave(SocketPlayerLeave event) {
+    public void onSLeave(SLeave event) {
         String target = event.getPlayerName();
         synchronized (statusEffects) {
             this.statusEffects.remove(target);

@@ -67,23 +67,23 @@ extends Plugin {
 
     protected void startUp() {
         this.nextConnection = 0L;
-        this.eventBus.register(SocketReceivePacket.class);
-        this.eventBus.register(SocketBroadcastPacket.class);
-        this.eventBus.register(SocketPlayerJoin.class);
-        this.eventBus.register(SocketPlayerLeave.class);
-        this.eventBus.register(SocketStartup.class);
-        this.eventBus.register(SocketShutdown.class);
-        this.eventBus.post(new SocketStartup());
+        this.eventBus.register(SReceive.class);
+        this.eventBus.register(SSend.class);
+        this.eventBus.register(SJoin.class);
+        this.eventBus.register(SLeave.class);
+        this.eventBus.register(SStartup.class);
+        this.eventBus.register(SShutdown.class);
+        this.eventBus.post(new SStartup());
     }
 
     protected void shutDown() {
-        this.eventBus.post(new SocketShutdown());
-        this.eventBus.unregister(SocketReceivePacket.class);
-        this.eventBus.unregister(SocketBroadcastPacket.class);
-        this.eventBus.unregister(SocketPlayerJoin.class);
-        this.eventBus.unregister(SocketPlayerLeave.class);
-        this.eventBus.unregister(SocketStartup.class);
-        this.eventBus.unregister(SocketShutdown.class);
+        this.eventBus.post(new SShutdown());
+        this.eventBus.unregister(SReceive.class);
+        this.eventBus.unregister(SSend.class);
+        this.eventBus.unregister(SJoin.class);
+        this.eventBus.unregister(SLeave.class);
+        this.eventBus.unregister(SStartup.class);
+        this.eventBus.unregister(SShutdown.class);
         if (this.connection != null) {
             this.connection.terminate(true);
         }
@@ -125,7 +125,7 @@ extends Plugin {
      * WARNING - Removed try catching itself - possible behaviour change.
      */
     @Subscribe
-    public void onSocketBroadcastPacket(SocketBroadcastPacket packet) {
+    public void onSSend(SSend packet) {
         try {
             PrintWriter outputStream;
             if (this.connection == null || this.connection.getState() != SocketState.CONNECTED) {

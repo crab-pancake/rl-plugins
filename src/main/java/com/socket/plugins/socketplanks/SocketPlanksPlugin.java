@@ -31,7 +31,6 @@ import javax.inject.Inject;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.Varbits;
-import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.AnimationChanged;
 import net.runelite.api.events.GameTick;
@@ -46,9 +45,8 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import com.socket.org.json.JSONArray;
 import com.socket.org.json.JSONObject;
-import com.socket.packet.SocketBroadcastPacket;
-import com.socket.packet.SocketReceivePacket;
-import net.runelite.client.ui.overlay.Overlay;
+import com.socket.packet.SSend;
+import com.socket.packet.SReceive;
 import net.runelite.client.ui.overlay.OverlayManager;
 import org.apache.commons.lang3.StringUtils;
 
@@ -138,7 +136,7 @@ extends Plugin {
                 data.put("plane", this.planksDroppedTile.getPlane());
                 JSONObject payload = new JSONObject();
                 payload.put("socketplanksdropped", data);
-                this.eventBus.post(new SocketBroadcastPacket(payload));
+                this.eventBus.post(new SSend(payload));
             }
         }
     }
@@ -164,7 +162,7 @@ extends Plugin {
                 data.put("timeStr", this.planksPickedUpTimeStr);
                 JSONObject payload = new JSONObject();
                 payload.put("socketplankspickedup", data);
-                this.eventBus.post(new SocketBroadcastPacket(payload));
+                this.eventBus.post(new SSend(payload));
             }
         }
     }
@@ -190,7 +188,7 @@ extends Plugin {
             data.put("timeStr", this.chestBuiltTimeStr);
             JSONObject payload = new JSONObject();
             payload.put("socketplanksbuilt", data);
-            this.eventBus.post(new SocketBroadcastPacket(payload));
+            this.eventBus.post(new SSend(payload));
         }
     }
 
@@ -201,11 +199,11 @@ extends Plugin {
         data.put(jsonmsg);
         JSONObject send = new JSONObject();
         send.put("socketplanksmsg", data);
-        this.eventBus.post(new SocketBroadcastPacket(send));
+        this.eventBus.post(new SSend(send));
     }
 
     @Subscribe
-    public void onSocketReceivePacket(SocketReceivePacket event) {
+    public void onSReceive(SReceive event) {
         try {
             JSONObject payload = event.getPayload();
             if (payload.has("socketplanksdropped")) {

@@ -33,9 +33,9 @@ import javax.inject.Inject;
 
 import com.socket.SocketPlugin;
 import com.socket.org.json.JSONObject;
-import com.socket.packet.SocketBroadcastPacket;
-import com.socket.packet.SocketPlayerLeave;
-import com.socket.packet.SocketReceivePacket;
+import com.socket.packet.SSend;
+import com.socket.packet.SLeave;
+import com.socket.packet.SReceive;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.MenuEntry;
@@ -51,7 +51,6 @@ import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDependency;
 import net.runelite.client.plugins.PluginDescriptor;
-import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.Text;
@@ -149,7 +148,7 @@ public class SocketHealingPlugin extends Plugin {
                 JSONObject packet = new JSONObject();
                 packet.put("name", name);
                 packet.put("player-health", playerHealth.toJSON());
-                this.eventBus.post(new SocketBroadcastPacket(packet));
+                this.eventBus.post(new SSend(packet));
                 this.lastRefresh = 0;
             }
         }
@@ -157,7 +156,7 @@ public class SocketHealingPlugin extends Plugin {
     }
 
     @Subscribe
-    public void onSocketReceivePacket(SocketReceivePacket event) {
+    public void onSReceive(SReceive event) {
         try {
             JSONObject payload = event.getPayload();
             String localName = this.client.getLocalPlayer().getName();
@@ -186,7 +185,7 @@ public class SocketHealingPlugin extends Plugin {
     }
 
     @Subscribe
-    public void onSocketPlayerLeave(SocketPlayerLeave event) {
+    public void onSLeave(SLeave event) {
         String target = event.getPlayerName();
         Map<String, SocketHealingPlayer> map = this.partyMembers;
         synchronized(map) {
