@@ -32,8 +32,8 @@ import java.util.Set;
 @PluginDescriptor(
 		name = "<html><font color=#b20e0e>[M] spec counter",
 		description = "Track specs over socket",
-		tags = {"combat", "npcs", "overlay"},
-		enabledByDefault = true
+		tags = {"combat", "spec", "socket"},
+		conflicts = {"Socket - Special Attack Counter", "Special Attack Counter"}
 )
 public class SpecPlugin extends Plugin
 {
@@ -50,11 +50,10 @@ public class SpecPlugin extends Plugin
 
 	private NPC lastTarget;
 	private int lastSpecTick;
-//	private long specialExperience = -1L;
-//	private long magicExperience = -1L;
 	private int minSpecHit;
+	private boolean interactChanged;
 
-	private String identifier = "special-extended";
+	private String identifier;
 
 	@Inject
 	private Client client;
@@ -87,6 +86,7 @@ public class SpecPlugin extends Plugin
 	protected void startUp()
 	{
 		reset();
+		identifier = config.identifier() ? "special-extended" : "m-specs";
 		wsClient.registerMessage(PartySpecUpdate.class);
 		overlayManager.add(overlay);
 	}
@@ -97,21 +97,18 @@ public class SpecPlugin extends Plugin
 		reset();
 		wsClient.unregisterMessage(PartySpecUpdate.class);
 		overlayManager.remove(overlay);
-		removeCounters();
 	}
 
 	protected void reset(){
+		interactChanged = false;
 		currentWorld = -1;
 		specialPercentage = -1;
 		lastTarget = null;
 		lastSpecTick = -1;
 		interactedNpcIds.clear();
 		specialUsed = false;
-//		specialExperience = -1L;
-//		magicExperience = -1L;
 		minSpecHit = -1;
 		removeCounters();
-//		identifier = config.identifier() ? "special-extended" : "m-specs";
 	}
 
 	@Subscribe
@@ -135,18 +132,33 @@ public class SpecPlugin extends Plugin
 	public void onConfigChanged(ConfigChanged event){
 		if (event.getGroup().equals("mspeccounter") && event.getKey().equals("identifier")) {
 			identifier = config.identifier() ? "special-extended" : "m-specs";
-			// clear();
+			removeCounters();
 		}
 	}
 
 	@Subscribe
-	public void onInteractingChanged(InteractingChanged interactingChanged) {
-		Actor source = interactingChanged.getSource();
-		Actor target = interactingChanged.getTarget();
-		if (source != client.getLocalPlayer() || target == null) {
+	public void onInteractingChanged(InteractingChanged changed) {
+		Actor source = changed.getSource();
+		Actor target = changed.getTarget();
+		if (source != client.getLocalPlayer() || !(target instanceof NPC)) {
+			return;
+		}
+
+		interactChanged = true;
+
+		NPCComposition composition = ((NPC) target).getComposition();
+		if (!ArrayUtils.contains(composition.getActions(), "Attack"))
+		{
+			// Skip over non attackable npcs so that eg. talking to bankers doesn't reset
+			// the counters.
 			return;
 		}
 		lastTarget = (NPC) target;
+
+		if (!interactedNpcIds.contains(lastTarget.getId())) {
+			removeCounters();
+			addInteracting(lastTarget.getId());
+		}
 	}
 
 	@Subscribe
@@ -168,8 +180,6 @@ public class SpecPlugin extends Plugin
 			lastSpecTick = client.getTickCount();
 			specialHitpointsExperience = client.getSkillExperience(Skill.HITPOINTS);
 			specialHitpointsGained = -1;
-//		specialExperience = this.client.getOverallExperience();
-//		magicExperience = this.client.getSkillExperience(Skill.MAGIC);
 
 			specialUsed = true;
 			minSpecHit = -1;
@@ -210,7 +220,7 @@ public class SpecPlugin extends Plugin
 
 		if (lastSpecTick != -1 && lastSpecTick < client.getTickCount() - 6){
 			// reset: last spec occurred too long ago
-			clear();
+			clearSpec();
 			return;
 		}
 
@@ -218,13 +228,10 @@ public class SpecPlugin extends Plugin
 		{
 			debug("spec used and last spec target != null");
 
-
-			int deltaExperience = specialHitpointsGained;  // TODO: check how this works with fake xp drops
-
-			if (deltaExperience > 0)
+			if (specialHitpointsGained > 0) // TODO: check how this works with fake xp drops
 			{
 				if (specialWeapon != null) {
-					minSpecHit = getHitFromXp(specialWeapon, deltaExperience);  // returns 1 if non dmg based spec
+					minSpecHit = getHitFromXp(specialWeapon, specialHitpointsGained);  // returns 1 if non dmg based spec
 
 					if (config.guessDawnbringer() && specialWeapon == SpecialWeapon.DAWNBRINGER) {
 						minSpecHit *= 1.9;
@@ -232,43 +239,40 @@ public class SpecPlugin extends Plugin
 					else if (specialWeapon.isDamage()){
 						return; // go to onHitsplat
 					}
+					clientThread.invokeLater(()-> {
+						if (interactChanged) {
+							debug("xp drop spec detected");
 
-					debug("xp drop spec detected");
+							String pName = client.getLocalPlayer()== null ? "null" : client.getLocalPlayer().getName();
+							updateCounter(pName, specialWeapon, null, minSpecHit);
 
-					if (!interactedNpcIds.contains(lastTarget.getId())) {
-						removeCounters();
-						addInteracting(lastTarget.getId());
-					}
+							if (!party.getMembers().isEmpty()) {
+								final PartySpecUpdate partySpecUpdate = new PartySpecUpdate(lastTarget.getId(), specialWeapon, minSpecHit);
+								partySpecUpdate.setMemberId(party.getLocalMember().getMemberId());
+								wsClient.send(partySpecUpdate);
+							}
+							socketSend(pName, lastTarget.getId(), specialWeapon, minSpecHit);
 
-					String pName = client.getLocalPlayer().getName();
-					updateCounter(pName, specialWeapon, null, minSpecHit);
-
-					if (!party.getMembers().isEmpty())
-					{
-						final PartySpecUpdate partySpecUpdate = new PartySpecUpdate(lastTarget.getId(), specialWeapon, minSpecHit);
-						partySpecUpdate.setMemberId(party.getLocalMember().getMemberId());
-						wsClient.send(partySpecUpdate);
-					}
-					socketSend(pName, lastTarget.getId(), specialWeapon, minSpecHit);
-
-					clear();
+							clearSpec();
+						}
+						return interactChanged;
+					});
 				}
 
 			}
 			else { // no exp gained: hit splashed
-				clear();
+				clearSpec();
 			}
 		}
+		interactChanged = true;
 	}
 
 	@Subscribe
 	public void onHitsplatApplied(HitsplatApplied hitsplatApplied) {
 		if (!specialUsed || minSpecHit == -1) return; // means either no spec or no hp exp was gained so spec missed
-		// is this necessary? already gets reset in onGameTick. maybe depends on order things are processed
 
 		Actor target = hitsplatApplied.getActor();
 		Hitsplat hitsplat = hitsplatApplied.getHitsplat();
-//		Hitsplat.HitsplatType hitsplatType = hitsplat.getHitsplatType();
 		if (!hitsplat.isMine() || target == client.getLocalPlayer() || hitsplat.getAmount() < minSpecHit || hitsplat.getAmount() > minSpecHit * 2.5) {
 			// hitsplat is not mine or hitsplat was on me or hitsplat is too big/small to be the spec
 			return;
@@ -278,17 +282,11 @@ public class SpecPlugin extends Plugin
 			return;
 		}
 
-//		specialExperience = -1L;
-//		magicExperience = -1L;
 		if (!(target instanceof NPC)) {
 			return;
 		}
 		NPC npc = (NPC)target;
 		int interactingId = npc.getId();
-		if (!interactedNpcIds.contains(interactingId)) {
-			removeCounters();
-			addInteracting(interactingId);
-		}
 		if (specialWeapon != null) {
 			if (!specialWeapon.isDamage()){
 				log.debug("non dmg based spec weapon processed hitsplat: check.");
@@ -300,23 +298,23 @@ public class SpecPlugin extends Plugin
 
 			if (!party.getMembers().isEmpty())
 			{
-				final PartySpecUpdate partySpecUpdate = new PartySpecUpdate(interactingId, specialWeapon, minSpecHit);
+				final PartySpecUpdate partySpecUpdate = new PartySpecUpdate(interactingId, specialWeapon, hit);
 				partySpecUpdate.setMemberId(party.getLocalMember().getMemberId());
 				wsClient.send(partySpecUpdate);
 			}
 
 			socketSend(pName, interactingId, specialWeapon, hit);
-			clear();
+			clearSpec();
 		}
 	}
 
 	@Subscribe
 	public void onNpcDespawned(NpcDespawned npcDespawned)
 	{
-		if (isSotetseg(npcDespawned.getNpc().getId()) && client.getLocalPlayer().getWorldLocation().getPlane() == 3) {
-			return;
-		}
-		// TODO: do something similar with other multi form bosses
+//		if (isSotetseg(npcDespawned.getNpc().getId()) && client.getLocalPlayer().getWorldLocation().getPlane() == 3) {
+//			return;
+//		}
+		// TODO: check if above is necessary with other multi form bosses. Removing for now because seeing total specs is usually unhelpful
 
 		NPC actor = npcDespawned.getNpc();
 		if (lastTarget == actor) {
@@ -343,45 +341,6 @@ public class SpecPlugin extends Plugin
 		eventBus.post(new SSend(payload));
 	}
 
-	private int checkInteracting()  // is this better than last target? probably, since multi form bosses are included
-	{
-		Player localPlayer = client.getLocalPlayer();
-		Actor interacting = localPlayer.getInteracting();
-
-		if (interacting instanceof NPC)
-		{
-			NPC npc = (NPC) interacting;
-			NPCComposition composition = npc.getComposition();
-			int interactingId = npc.getId();
-
-			if (!ArrayUtils.contains(composition.getActions(), "Attack"))
-			{
-				// Skip over non attackable npcs so that eg. talking to bankers doesn't reset
-				// the counters.
-				return -1;
-			}
-
-			if (!interactedNpcIds.contains(interactingId))
-			{
-				removeCounters();
-				addInteracting(interactingId);
-			}
-
-			return interactingId;
-		}
-
-		return -1;
-	}
-
-	private void clear(){
-		debug("clearing spec");
-		specialHitpointsGained = 0;
-		lastTarget = null;
-		specialUsed = false;
-		minSpecHit = -1;
-		lastSpecTick = -1;
-	}
-
 	@Subscribe
 	public void onSReceive(SReceive event) {
 		try {
@@ -392,8 +351,8 @@ public class SpecPlugin extends Plugin
 			JSONObject payload = event.getPayload();
 			if (payload.has(identifier)) {
 				debug("received socket thing, identifier "+ identifier);
-				String pName = client.getLocalPlayer().getName();
-				JSONObject data = payload.getJSONObject("special-extended");
+				String pName = client.getLocalPlayer() == null ? "null" : client.getLocalPlayer().getName();
+				JSONObject data = payload.getJSONObject(identifier);
 				if (data.getString("player").equals(pName)) { // ignore own packets
 					return;
 				}
@@ -458,17 +417,11 @@ public class SpecPlugin extends Plugin
 
 		clientThread.invoke(() ->
 		{
-			// If not interacting with any npcs currently, add to interacting list
-			if (interactedNpcIds.isEmpty())
-			{
+			if (!interactedNpcIds.contains(event.getNpcId())) {
+				removeCounters();
 				addInteracting(event.getNpcId());
 			}
-
-			// Otherwise we only add the count if it is against a npc we are already tracking
-			if (interactedNpcIds.contains(event.getNpcId()))
-			{
-				updateCounter(name, event.getWeapon(), null, event.getHit());
-			}
+			updateCounter(name, event.getWeapon(), null, event.getHit());
 		});
 	}
 
@@ -494,15 +447,19 @@ public class SpecPlugin extends Plugin
 	private void updateCounter(String player, SpecialWeapon specialWeapon, String nullIfFromMe, int hit) {
 		debug("update counter");
 
-		if (specialWeapon == SpecialWeapon.BANDOS_GODSWORD_OR) {
-			specialWeapon = SpecialWeapon.BANDOS_GODSWORD;
+		switch (specialWeapon){
+			case BANDOS_GODSWORD_OR:
+				specialWeapon = SpecialWeapon.BANDOS_GODSWORD;
+				break;
+			case DARKLIGHT:
+				specialWeapon = SpecialWeapon.ARCLIGHT;
+				break;
+			case BONE_DAGGER_P:
+			case BONE_DAGGER_PP:
+			case BONE_DAGGER_S:
+				specialWeapon = SpecialWeapon.BONE_DAGGER;
 		}
-		else if (specialWeapon == SpecialWeapon.DARKLIGHT) {
-			specialWeapon = SpecialWeapon.ARCLIGHT;
-		}
-		else if (specialWeapon == SpecialWeapon.BONE_DAGGER_P || specialWeapon == SpecialWeapon.BONE_DAGGER_PP || specialWeapon == SpecialWeapon.BONE_DAGGER_S){
-			specialWeapon = SpecialWeapon.BONE_DAGGER;
-		}
+
 		SpecialCounter counter = specialCounter[specialWeapon.ordinal()];
 		BufferedImage image;
 		if (specialWeapon == SpecialWeapon.VULNERABILITY){
@@ -535,6 +492,15 @@ public class SpecPlugin extends Plugin
 		}
 	}
 
+	private void clearSpec(){
+		debug("clearing spec");
+		specialHitpointsGained = 0;
+		lastTarget = null;
+		specialUsed = false;
+		minSpecHit = -1;
+		lastSpecTick = -1;
+	}
+
 	private void removeCounters() {
 		interactedNpcIds.clear();
 		for (int i = 0; i < specialCounter.length; ++i){
@@ -548,7 +514,7 @@ public class SpecPlugin extends Plugin
 
 	private void debug(String s, Object ...a){
 		if (config.debug()){
-			System.out.println(s);
+//			System.out.println(s);
 //			log.debug(s, a);
 		}
 	}

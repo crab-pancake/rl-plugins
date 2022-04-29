@@ -1,7 +1,6 @@
 package com.highlight;
 
-import com.socket.plugins.specialcounterextended.SpecialCounterExtendedPlugin;
-import com.socket.plugins.specs.SpecPlugin;
+import com.neverlog.NeverLog;
 import net.runelite.client.RuneLite;
 import net.runelite.client.externalplugins.ExternalPluginManager;
 
@@ -10,7 +9,7 @@ public class PluginTest
 {
 	public static void main(String[] args) throws Exception
 	{
-//		ExternalPluginManager.loadBuiltin(SpecPlugin.class);
+		ExternalPluginManager.loadBuiltin(NeverLog.class);
 		RuneLite.main(args);
 	}
 }

@@ -1,3 +1,5 @@
 Hello World!
 
+Stuff in net.runelite will be loaded with PluginTest
+
 <html><font color=#25c550>
