@@ -9,7 +9,7 @@ public class PluginTest
 {
 	public static void main(String[] args) throws Exception
 	{
-		ExternalPluginManager.loadBuiltin(NeverLog.class);
+		ExternalPluginManager.loadBuiltin(SpoonNpcHighlightPlugin.class);
 		RuneLite.main(args);
 	}
 }

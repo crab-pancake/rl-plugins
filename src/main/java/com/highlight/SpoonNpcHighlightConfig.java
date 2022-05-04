@@ -244,29 +244,34 @@ public interface SpoonNpcHighlightConfig extends Config
     
     @ConfigItem(position = 17, keyName = "deadNpcMenuColor", name = "Dead NPC Menu Color", description = "Highlights names in right click menu entry when NPC is dead")
     Color deadNpcMenuColor();
+
+    @ConfigItem(position = 18, keyName = "deprioritiseDead", name = "Deprioritise dead", description = "Deprioritises menu options for dead NPCs")
+    default boolean deprioritiseDead() {
+        return false;
+    }
     
-    @ConfigItem(position = 18, keyName = "respawnTimer", name = "Respawn Timer", description = "Shows timer for when a marked NPC will respawn")
+    @ConfigItem(position = 19, keyName = "respawnTimer", name = "Respawn Timer", description = "Shows timer for when a marked NPC will respawn")
     default respawnTimerMode respawnTimer() {
         return respawnTimerMode.OFF;
     }
 
-    @ConfigItem(position = 19, keyName = "respawnTimerBox", name = "Respawn Timer Box", description = "Marks tile(s) where NPC respawns")
+    @ConfigItem(position = 20, keyName = "respawnTimerBox", name = "Respawn Timer Box", description = "Marks tile(s) where NPC respawns")
     default boolean respawnTimerBox() {
         return true;
     }
 
     @Alpha
-    @ConfigItem(position=20, keyName="respawnTimerColor", name="Respawn Time Color", description="Sets the color of the text for Respawn Timer")
+    @ConfigItem(position=21, keyName="respawnTimerColor", name="Respawn Time Color", description="Sets the color of the text for Respawn Timer")
     default Color respawnTimerColor() {
         return Color.WHITE;
     }
 
-    @ConfigItem(position=21, keyName="displayName", name="Display Name", description="Shows name of NPC's in the list above them")
+    @ConfigItem(position=22, keyName="displayName", name="Display Name", description="Shows name of NPC's in the list above them")
     default String displayName() {
         return "";
     }
 
-    @ConfigItem(position=21, keyName="npcMinimapMode", name="Highlight Minimap", description="Highlights NPC on minimap and or displays name")
+    @ConfigItem(position=23, keyName="npcMinimapMode", name="Highlight Minimap", description="Highlights NPC on minimap and or displays name")
     default npcMinimapMode npcMinimapMode() {
         return npcMinimapMode.OFF;
     }

@@ -47,7 +47,7 @@ enum Boss {
     }
 
     public String toString() {
-        return "Boss." + this.name() + "(ids=" + this.getIds() + ")";
+        return "Boss." + this.name() + " (ids=" + this.getIds() + ")";
     }
 }
 

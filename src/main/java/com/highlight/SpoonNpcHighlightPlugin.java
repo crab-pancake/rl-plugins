@@ -220,21 +220,23 @@ public class SpoonNpcHighlightPlugin extends Plugin
         if (NPC_MENU_ACTIONS.contains(menuAction)) {  // shift not pressed: not making a tag?
             NPC npc = client.getCachedNPCs()[event.getIdentifier()];
             Color color = null;
+            MenuEntry[] menuEntries = client.getMenuEntries();
+            MenuEntry menuEntry = menuEntries[menuEntries.length - 1];
             if (npc.isDead()) {
                 color = config.deadNpcMenuColor();
+                if (config.deprioritiseDead() && npc.getName() != null && !config.ignoreDeadExclusion().contains(npc.getName().toLowerCase())){
+                    menuEntry.setDeprioritized(true);
+                }
             } else if (config.highlightMenuNames() && npc.getName() != null && checkAllLists(npc)) {
                 color = config.tagStyleMode() == SpoonNpcHighlightConfig.tagStyleMode.TURBO ? Color.getHSBColor(new Random().nextFloat(), 1.0f, 1.0f) : config.highlightColor();
             }
             if (color != null) {
-                MenuEntry[] menuEntries = client.getMenuEntries();
-                MenuEntry menuEntry = menuEntries[menuEntries.length - 1];
                 String target = ColorUtil.prependColorTag(Text.removeTags(event.getTarget()), color);
                 menuEntry.setTarget(target);
                 client.setMenuEntries(menuEntries);
             }
         }
-        else
-         if (menuAction == MenuAction.EXAMINE_NPC && client.isKeyPressed(81)) {
+        else if (menuAction == MenuAction.EXAMINE_NPC && client.isKeyPressed(81)) {
             final int id = event.getIdentifier();
             final NPC npc = client.getCachedNPCs()[id];
             if (npc != null && npc.getName() != null) {  // && !npc.isDead() ?

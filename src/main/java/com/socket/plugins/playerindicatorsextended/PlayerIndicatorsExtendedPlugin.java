@@ -104,7 +104,7 @@ extends Plugin {
     }
 
     @Subscribe
-    public void onSShuddown(SShutdown event) {
+    public void onSShutdown(SShutdown event) {
         this.names.clear();
     }
 

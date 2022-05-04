@@ -34,7 +34,6 @@ public class nyloPlugin extends Plugin
 	private nyloOverlay nyloOverlay;
 	@Inject
 	private nyloConfig config;
-	private nyloPanel panel;
 	private NavigationButton navButton;
 
 	final int NYLO_ROOM = 13122;

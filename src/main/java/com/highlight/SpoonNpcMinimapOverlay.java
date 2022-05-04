@@ -49,6 +49,9 @@ public class SpoonNpcMinimapOverlay extends Overlay {
             if (npc.getName() == null || config.npcMinimapMode() == SpoonNpcHighlightConfig.npcMinimapMode.OFF) continue;
 
             String name = npc.getName().toLowerCase();
+
+            if (npc.isDead() && !config.ignoreDeadExclusion().contains(name)) continue;
+
             ArrayList<ArrayList<String>> allLists = new ArrayList<>(Arrays.asList(plugin.tileNames, plugin.trueTileNames, plugin.swTileNames, plugin.hullNames, plugin.areaNames, plugin.outlineNames, plugin.turboNames));
             block1: for (ArrayList<String> strList : allLists) {
                 for (String str : strList) {
