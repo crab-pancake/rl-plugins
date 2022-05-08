@@ -6,11 +6,15 @@ package com.highlight;
 
 import net.runelite.client.config.Alpha;
 import java.awt.Color;
+import java.util.Arrays;
+import java.util.stream.Stream;
+
 import net.runelite.client.config.Range;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigSection;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.Config;
+import org.apache.commons.text.WordUtils;
 
 @ConfigGroup("SpoonNpcHighlight")
 public interface SpoonNpcHighlightConfig extends Config
@@ -236,7 +240,7 @@ public interface SpoonNpcHighlightConfig extends Config
         return true;
     }
 
-    @ConfigItem(position=16, keyName="ignoreDeadExclusion", name="Ignore Dead Exclusion List", description="List of npc's to not remove highlight when dead")
+    @ConfigItem(position=16, keyName="ignoreDeadExclusion", name="Ignore Dead Exclusion List", description="NPCs to keep attack option/highlight when dead")
     default String ignoreDeadExclusion()
     {
         return "";
@@ -275,6 +279,7 @@ public interface SpoonNpcHighlightConfig extends Config
     default npcMinimapMode npcMinimapMode() {
         return npcMinimapMode.OFF;
     }
+
     
     enum tagStyleMode
     {
@@ -285,6 +290,15 @@ public interface SpoonNpcHighlightConfig extends Config
         AREA, 
         OUTLINE, 
         TURBO;
+
+        @Override
+        public String toString() {
+            return WordUtils.capitalizeFully(this.name(), '_');
+        }
+
+        public static Stream<String> allToStrings() {
+            return Arrays.stream(tagStyleMode.values()).map(tagStyleMode::toString);
+        }
     }
     
     enum interactingHighlightMode

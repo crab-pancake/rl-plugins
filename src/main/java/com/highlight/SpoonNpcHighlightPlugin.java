@@ -61,12 +61,13 @@ public class SpoonNpcHighlightPlugin extends Plugin
     public ArrayList<String> namesToDisplay = new ArrayList<>();
     public ArrayList<String> ignoreDeadExclusionList = new ArrayList<>();
     public Instant lastTickUpdate;
-    public int turboModeStyle = 0;
+    public SpoonNpcHighlightConfig.tagStyleMode turboModeStyle;
     public int turboTileWidth = 0;
     public int turboOutlineWidth = 0;
     public int turboOutlineFeather = 0;
     private static final Set<MenuAction> NPC_MENU_ACTIONS = ImmutableSet.of(MenuAction.NPC_FIRST_OPTION, MenuAction.NPC_SECOND_OPTION, MenuAction.NPC_THIRD_OPTION, MenuAction.NPC_FOURTH_OPTION, MenuAction.NPC_FIFTH_OPTION, MenuAction.WIDGET_TARGET_ON_NPC, MenuAction.ITEM_USE_ON_NPC);
-    
+    private Random random;
+
     @Provides
     SpoonNpcHighlightConfig providesConfig(final ConfigManager configManager) {
         return configManager.getConfig(SpoonNpcHighlightConfig.class);
@@ -91,6 +92,8 @@ public class SpoonNpcHighlightPlugin extends Plugin
         splitIdList(config.turboIds(), turboIds);
         splitNameList(config.displayName(), namesToDisplay);
         splitNameList(config.ignoreDeadExclusion(), ignoreDeadExclusionList);
+
+        random = new Random();
     }
     
     protected void shutDown() {
@@ -112,7 +115,7 @@ public class SpoonNpcHighlightPlugin extends Plugin
         outlineNames.clear();
         outlineIds.clear();
         npcSpawns.clear();
-        turboModeStyle = 0;
+        turboModeStyle = SpoonNpcHighlightConfig.tagStyleMode.TILE;
         turboTileWidth = 0;
         turboOutlineWidth = 0;
         turboOutlineFeather = 0;
@@ -145,61 +148,63 @@ public class SpoonNpcHighlightPlugin extends Plugin
     
     @Subscribe
     public void onConfigChanged(final ConfigChanged event) {
-        if (event.getKey().equals("tileNames")) {
-            tileNames.clear();
-            splitNameList(config.tileNames(), tileNames);
-        }
-        else if (event.getKey().equals("tileIds")) {
-            tileIds.clear();
-            splitIdList(config.tileIds(), tileIds);
-        }
-        else if (event.getKey().equals("trueTileNames")) {
-            trueTileNames.clear();
-            splitNameList(config.trueTileNames(), trueTileNames);
-        }
-        else if (event.getKey().equals("trueTileIds")) {
-            trueTileIds.clear();
-            splitIdList(config.trueTileIds(), trueTileIds);
-        }
-        else if (event.getKey().equals("swTileNames")) {
-            swTileNames.clear();
-            splitNameList(config.swTileNames(), swTileNames);
-        }
-        else if (event.getKey().equals("swTileIds")) {
-            swTileIds.clear();
-            splitIdList(config.swTileIds(), swTileIds);
-        }
-        else if (event.getKey().equals("hullNames")) {
-            hullNames.clear();
-            splitNameList(config.hullNames(), hullNames);
-        }
-        else if (event.getKey().equals("hullIds")) {
-            hullIds.clear();
-            splitIdList(config.hullIds(), hullIds);
-        }
-        else if (event.getKey().equals("areaNames")) {
-            areaNames.clear();
-            splitNameList(config.areaNames(), areaNames);
-        }
-        else if (event.getKey().equals("areaIds")) {
-            areaIds.clear();
-            splitIdList(config.areaIds(), areaIds);
-        }
-        else if (event.getKey().equals("outlineNames")) {
-            outlineNames.clear();
-            splitNameList(config.outlineNames(), outlineNames);
-        }
-        else if (event.getKey().equals("outlineIds")) {
-            outlineIds.clear();
-            splitIdList(config.outlineIds(), outlineIds);
-        }
-        else if (event.getKey().equals("turboNames")) {
-            turboNames.clear();
-            splitNameList(config.turboNames(), turboNames);
-        }
-        else if (event.getKey().equals("turboIds")) {
-            turboIds.clear();
-            splitIdList(config.turboIds(), turboIds);
+        switch (event.getKey()) {
+            case "tileNames":
+                tileNames.clear();
+                splitNameList(config.tileNames(), tileNames);
+                break;
+            case "tileIds":
+                tileIds.clear();
+                splitIdList(config.tileIds(), tileIds);
+                break;
+            case "trueTileNames":
+                trueTileNames.clear();
+                splitNameList(config.trueTileNames(), trueTileNames);
+                break;
+            case "trueTileIds":
+                trueTileIds.clear();
+                splitIdList(config.trueTileIds(), trueTileIds);
+                break;
+            case "swTileNames":
+                swTileNames.clear();
+                splitNameList(config.swTileNames(), swTileNames);
+                break;
+            case "swTileIds":
+                swTileIds.clear();
+                splitIdList(config.swTileIds(), swTileIds);
+                break;
+            case "hullNames":
+                hullNames.clear();
+                splitNameList(config.hullNames(), hullNames);
+                break;
+            case "hullIds":
+                hullIds.clear();
+                splitIdList(config.hullIds(), hullIds);
+                break;
+            case "areaNames":
+                areaNames.clear();
+                splitNameList(config.areaNames(), areaNames);
+                break;
+            case "areaIds":
+                areaIds.clear();
+                splitIdList(config.areaIds(), areaIds);
+                break;
+            case "outlineNames":
+                outlineNames.clear();
+                splitNameList(config.outlineNames(), outlineNames);
+                break;
+            case "outlineIds":
+                outlineIds.clear();
+                splitIdList(config.outlineIds(), outlineIds);
+                break;
+            case "turboNames":
+                turboNames.clear();
+                splitNameList(config.turboNames(), turboNames);
+                break;
+            case "turboIds":
+                turboIds.clear();
+                splitIdList(config.turboIds(), turboIds);
+                break;
         }
     }
     
@@ -228,7 +233,7 @@ public class SpoonNpcHighlightPlugin extends Plugin
                     menuEntry.setDeprioritized(true);
                 }
             } else if (config.highlightMenuNames() && npc.getName() != null && checkAllLists(npc)) {
-                color = config.tagStyleMode() == SpoonNpcHighlightConfig.tagStyleMode.TURBO ? Color.getHSBColor(new Random().nextFloat(), 1.0f, 1.0f) : config.highlightColor();
+                color = config.tagStyleMode() == SpoonNpcHighlightConfig.tagStyleMode.TURBO ? Color.getHSBColor(random.nextFloat(), 1.0f, 1.0f) : config.highlightColor();
             }
             if (color != null) {
                 String target = ColorUtil.prependColorTag(Text.removeTags(event.getTarget()), color);
@@ -249,43 +254,14 @@ public class SpoonNpcHighlightPlugin extends Plugin
         if (npc.getName() == null) return;  // TODO: eventually make this search id instead?
 
         ArrayList<String> names = whichListNames(mode);
-        String highlightType;
-        switch (mode){
-            case TRUE_TILE: {
-                highlightType = "True-Tile";
-                break;
-            }
-            case SW_TILE: {
-                highlightType = "SW-Tile";
-                break;
-            }
-            case HULL: {
-                highlightType = "Hull";
-                break;
-            }
-            case AREA: {
-                highlightType = "Area";
-                break;
-            }
-            case OUTLINE: {
-                highlightType = "Outline";
-                break;
-            }
-            case TURBO: {
-                highlightType = "Turbo";
-                break;
-            }
-            default: {
-                highlightType = "Tile";
-            }
-        }
+        String highlightType = mode.toString();
 
         String target = event.getTarget();
         if (config.highlightMenuNames()) {
             int colorCode;
             if (config.tagStyleMode() == SpoonNpcHighlightConfig.tagStyleMode.TURBO) {
                 if (turboColors.size() == 0) {
-                    colorCode = Color.getHSBColor(new Random().nextFloat(), 1.0f, 1.0f).getRGB();
+                    colorCode = Color.getHSBColor(random.nextFloat(), 1.0f, 1.0f).getRGB();
                 }
                 else {
                     colorCode = turboColors.get(turboNames.indexOf(npc.getName().toLowerCase())).getRGB();
@@ -309,7 +285,7 @@ public class SpoonNpcHighlightPlugin extends Plugin
     @Subscribe
     public void onMenuOptionClicked(final MenuOptionClicked event) {
         if (event.getMenuAction() == MenuAction.RUNELITE && (event.getMenuOption().contains("Tag All ") || event.getMenuOption().contains("Untag All ")) &&
-                (event.getMenuOption().contains(" Tile") || event.getMenuOption().contains(" True-Tile") || event.getMenuOption().contains(" SW-Tile") || event.getMenuOption().contains(" Hull") || event.getMenuOption().contains(" Area") || event.getMenuOption().contains(" Outline") || event.getMenuOption().contains(" Turbo"))) {
+                (SpoonNpcHighlightConfig.tagStyleMode.allToStrings().anyMatch(event.getMenuOption()::contains))) {
             final int id = event.getId();
             final NPC npc = client.getCachedNPCs()[id];
             ArrayList<String> listToChange = new ArrayList<>();
@@ -322,26 +298,27 @@ public class SpoonNpcHighlightPlugin extends Plugin
                 }
                 listToChange = whichListNames(config.tagStyleMode());
             }
-            if (config.tagStyleMode() == SpoonNpcHighlightConfig.tagStyleMode.TILE) {
-                config.setTileNames(Text.toCSV(listToChange));
-            }
-            else if (config.tagStyleMode() == SpoonNpcHighlightConfig.tagStyleMode.TRUE_TILE) {
-                config.setTrueTileNames(Text.toCSV(listToChange));
-            }
-            else if (config.tagStyleMode() == SpoonNpcHighlightConfig.tagStyleMode.SW_TILE) {
-                config.setSwTileNames(Text.toCSV(listToChange));
-            }
-            else if (config.tagStyleMode() == SpoonNpcHighlightConfig.tagStyleMode.HULL) {
-                config.setHullNames(Text.toCSV(listToChange));
-            }
-            else if (config.tagStyleMode() == SpoonNpcHighlightConfig.tagStyleMode.AREA) {
-                config.setAreaNames(Text.toCSV(listToChange));
-            }
-            else if (config.tagStyleMode() == SpoonNpcHighlightConfig.tagStyleMode.OUTLINE) {
-                config.setOutlineNames(Text.toCSV(listToChange));
-            }
-            else {
-                config.setTurboNames(Text.toCSV(listToChange));
+            switch (config.tagStyleMode()) {
+                case TILE:
+                    config.setTileNames(Text.toCSV(listToChange));
+                    break;
+                case TRUE_TILE:
+                    config.setTrueTileNames(Text.toCSV(listToChange));
+                    break;
+                case SW_TILE:
+                    config.setSwTileNames(Text.toCSV(listToChange));
+                    break;
+                case HULL:
+                    config.setHullNames(Text.toCSV(listToChange));
+                    break;
+                case AREA:
+                    config.setAreaNames(Text.toCSV(listToChange));
+                    break;
+                case OUTLINE:
+                    config.setOutlineNames(Text.toCSV(listToChange));
+                    break;
+                default:
+                    config.setTurboNames(Text.toCSV(listToChange));
             }
             event.consume();
         }
@@ -405,12 +382,12 @@ public class SpoonNpcHighlightPlugin extends Plugin
         lastTickUpdate = Instant.now();
         turboColors.clear();
         for (int i = 0; i < turboNames.size() + turboIds.size(); ++i) {
-            turboColors.add(Color.getHSBColor(new Random().nextFloat(), 1.0f, 1.0f));
+            turboColors.add(Color.getHSBColor(random.nextFloat(), 1.0f, 1.0f));
         }
-        turboModeStyle = new Random().nextInt(6);
-        turboTileWidth = new Random().nextInt(10) + 1;
-        turboOutlineWidth = new Random().nextInt(50) + 1;
-        turboOutlineFeather = new Random().nextInt(4);
+        turboModeStyle = SpoonNpcHighlightConfig.tagStyleMode.values()[random.nextInt(6)];
+        turboTileWidth = random.nextInt(10) + 1;
+        turboOutlineWidth = random.nextInt(50) + 1;
+        turboOutlineFeather = random.nextInt(4);
     }
 
     public boolean checkSpecificList(ArrayList<String> strList, ArrayList<Integer> intList, NPC npc) {

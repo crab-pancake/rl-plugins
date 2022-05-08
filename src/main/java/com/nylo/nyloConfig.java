@@ -157,4 +157,15 @@ public interface nyloConfig extends Config
 	{
 		return false;
 	}
+
+	@ConfigItem(
+			keyName = "debug",
+			name = "Debug",
+			description = "",
+			position = 8
+	)
+	default boolean debug()
+	{
+		return false;
+	}
 }

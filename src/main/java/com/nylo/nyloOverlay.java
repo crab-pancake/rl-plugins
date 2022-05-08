@@ -56,6 +56,7 @@ public class nyloOverlay extends Overlay {
                     final LocalPoint lp = npc.getLocalLocation();
                     Color fill = new Color(colour.getRed(), colour.getGreen(), colour.getBlue(), colour.getAlpha() * config.fillOpacity());
                     if (lp != null) {
+
                         final Polygon tilePoly = Perspective.getCanvasTileAreaPoly(this.client, lp, size);
                         if (tilePoly != null) {
                             this.renderPoly(graphics, colour, fill, tilePoly, this.config.thickness());
@@ -64,10 +65,11 @@ public class nyloOverlay extends Overlay {
                 }
             }
         }
-        if (config.meowdy()){
-            if (this.client.getMapRegions() != null && ArrayUtils.contains(this.client.getMapRegions(), 12611)){
+
+        if (this.config.meowdy()){
+            if (this.client.getLocalPlayer() != null && ArrayUtils.contains(this.client.getMapRegions(), 12611)){
                 for (final NPC npc : this.client.getNpcs()) {
-                    if (!npc.isDead() && this.plugin.verzikNylos.contains(npc.getId())) {
+                    if (this.plugin.verzikNylos.contains(npc.getId())) {
                         final NPCComposition npcComposition = npc.getTransformedComposition();
                         if (npcComposition == null) {
                             continue;
@@ -87,11 +89,11 @@ public class nyloOverlay extends Overlay {
                             }
                         }
                         final String text = npc.getInteracting().getName();
-                        final net.runelite.api.Point textLoc = npc.getCanvasTextLocation(graphics, text, npc.getLogicalHeight() + 20);
+                        final Point textLoc = npc.getCanvasTextLocation(graphics, text, npc.getLogicalHeight() + 20);
                         if (textLoc == null) {
                             continue;
                         }
-                        final net.runelite.api.Point pointShadow = new Point(textLoc.getX() + 1, textLoc.getY() + 1);
+                        final Point pointShadow = new Point(textLoc.getX() + 1, textLoc.getY() + 1);
                         OverlayUtil.renderTextLocation(graphics, pointShadow, text, Color.BLACK);
                         OverlayUtil.renderTextLocation(graphics, textLoc, text, targeted ? this.config.aggroColour() : Color.WHITE);
                     }
