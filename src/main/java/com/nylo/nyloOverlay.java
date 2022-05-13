@@ -36,18 +36,18 @@ public class nyloOverlay extends Overlay {
                         continue;
                     }
                     Color colour;
-                    if ((this.config.meleeAggro() && this.plugin.aggro_meleeIds.contains(npc.getId()))
-                            ||(this.config.rangeAggro() && this.plugin.aggro_rangeIds.contains(npc.getId()))
-                            ||(this.config.mageAggro() && this.plugin.aggro_mageIds.contains(npc.getId()))){
+                    if ((this.plugin.meleeAggro && this.plugin.aggro_meleeIds.contains(npc.getId()))
+                            ||(this.plugin.rangeAggro && this.plugin.aggro_rangeIds.contains(npc.getId()))
+                            ||(this.plugin.mageAggro && this.plugin.aggro_mageIds.contains(npc.getId()))){
                         colour = config.aggroColour();
                     }
-                    else if (this.config.melee() && (this.plugin.meleeIds.contains(npc.getId()) || this.plugin.aggro_meleeIds.contains(npc.getId()))) {
+                    else if (this.plugin.meleeHighlight && (this.plugin.meleeIds.contains(npc.getId()) || this.plugin.aggro_meleeIds.contains(npc.getId()))) {
                         colour = config.meleeColour();
                     }
-                    else if (this.config.range() && (this.plugin.rangeIds.contains(npc.getId()) || this.plugin.aggro_rangeIds.contains(npc.getId()))) {
+                    else if (this.plugin.rangeHighlight && (this.plugin.rangeIds.contains(npc.getId()) || this.plugin.aggro_rangeIds.contains(npc.getId()))) {
                         colour = config.rangeColour();
                     }
-                    else if (this.config.mage() && (this.plugin.mageIds.contains(npc.getId()) || this.plugin.aggro_mageIds.contains(npc.getId()))) {
+                    else if (this.plugin.mageHighlight && (this.plugin.mageIds.contains(npc.getId()) || this.plugin.aggro_mageIds.contains(npc.getId()))) {
                         colour = config.mageColour();
                     }
                     else continue;
@@ -83,7 +83,7 @@ public class nyloOverlay extends Overlay {
                                 if (lp != null) {
                                     final Polygon tilePoly = Perspective.getCanvasTileAreaPoly(this.client, lp, size);
                                     if (tilePoly != null) {
-                                        this.renderPoly(graphics, Color.RED, new Color(0,0,0,0), tilePoly, this.config.thickness());
+                                        this.renderPoly(graphics, this.config.aggroColour(), new Color(0,0,0,0), tilePoly, this.config.thickness());
                                     }
                                 }
                             }

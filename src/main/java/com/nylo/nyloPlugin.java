@@ -59,6 +59,7 @@ public class nyloPlugin extends Plugin
 	boolean meleeAggro;
 	boolean rangeAggro;
 	boolean mageAggro;
+	boolean wasInNylo;
 
 	final int NYLO_ROOM = 13122;
 	final List<Integer> meleeIds = Arrays.asList(8342,8345,10791,10794);
@@ -84,12 +85,11 @@ public class nyloPlugin extends Plugin
 		meleeHighlight = config.melee();
 		rangeHighlight = config.range();
 		mageHighlight = config.mage();
-
 		meleeAggro = config.meleeAggro();
 		rangeAggro = config.rangeAggro();
 		mageAggro = config.mageAggro();
 
-		updateInfoBoxes();
+		overlayManager.add(nyloOverlay);
 	}
 
 	@Override
@@ -103,36 +103,40 @@ public class nyloPlugin extends Plugin
 	@Subscribe
 	public void onConfigChanged(ConfigChanged configChanged){
 		if (Objects.equals(configChanged.getGroup(), "nylohighlight")){
-			boolean changed = false;
+			if (Objects.equals(configChanged.getKey(), "debug")){
+				updateInfoBoxes(-2);
+				return;
+			}
+			int changed = -1;
 			boolean newval = Boolean.parseBoolean(configChanged.getNewValue());
 			switch (configChanged.getKey()){
 				case ("melee"):
 					meleeHighlight = newval;
-					changed = true;
+					changed = 0;
 					break;
 				case ("meleeAggro"):
 					meleeAggro = newval;
-					changed = true;
+					changed = 0;
 					break;
 				case ("range"):
 					rangeHighlight = newval;
-					changed = true;
+					changed = 1;
 					break;
 				case ("rangeAggro"):
 					rangeAggro = newval;
-					changed = true;
+					changed = 1;
 					break;
 				case ("mage"):
 					mageHighlight = newval;
-					changed = true;
+					changed = 2;
 					break;
 				case ("mageAggro"):
 					mageAggro = newval;
-					changed = true;
+					changed = 2;
 					break;
 			}
-			if (changed){
-				updateInfoBoxes();
+			if (changed != -1 && this.inNylo()){
+				updateInfoBoxes(changed);
 			}
 		}
 	}
@@ -141,36 +145,36 @@ public class nyloPlugin extends Plugin
 	public void onOverlayMenuClicked(OverlayMenuClicked event){
 		OverlayMenuEntry entry = event.getEntry();
 		if (entry.getMenuAction() == MenuAction.RUNELITE_OVERLAY_CONFIG) {
-			boolean changed = false;
+			int changed = -1;
 			if (Objects.equals(entry.getTarget(), "Melee nylos")) {
 				if (entry.getOption().equals("Toggle highlight")) {
 						meleeHighlight = !meleeHighlight;
-						changed = true;
+						changed = 0;
 					} else if (event.getEntry().getOption().equals("Toggle aggro")) {
 						meleeAggro = !meleeAggro;
-						changed = true;
+						changed = 0;
 					}
 			}
 			else if (Objects.equals(entry.getTarget(), "Range nylos")) {
 				if (entry.getOption().equals("Toggle highlight")) {
 					rangeHighlight = !rangeHighlight;
-					changed = true;
+					changed = 1;
 				} else if (event.getEntry().getOption().equals("Toggle aggro")) {
 					rangeAggro = !rangeAggro;
-					changed = true;
+					changed = 1;
 				}
 			}
 			else if (Objects.equals(entry.getTarget(), "Mage nylos")) {
 				if (entry.getOption().equals("Toggle highlight")) {
 					mageHighlight = !mageHighlight;
-					changed = true;
+					changed = 2;
 				} else if (event.getEntry().getOption().equals("Toggle aggro")) {
 					mageAggro = !mageAggro;
-					changed = true;
+					changed = 2;
 				}
 			}
-			if (changed) {
-				updateInfoBoxes();
+			if (changed != -1 && this.inNylo()) {
+				updateInfoBoxes(changed);
 			}
 		}
 	}
@@ -179,29 +183,41 @@ public class nyloPlugin extends Plugin
 	public void onGameStateChanged(GameStateChanged event){
 		if (event.getGameState() == GameState.LOGGED_IN) {
 			if (this.inNylo()) {
-				overlayManager.add(nyloOverlay);
-
-				updateInfoBoxes();
+				updateInfoBoxes(-2);
 			}
-			else
-				overlayManager.remove(nyloOverlay);
+			else {
+				infoBoxManager.removeInfoBox(meleeInfoBox);
+				infoBoxManager.removeInfoBox(rangeInfoBox);
+				infoBoxManager.removeInfoBox(mageInfoBox);
+			}
 		}
 	}
 
-	private void updateInfoBoxes(){
+	private void updateInfoBoxes(int i){
 		infoBoxManager.removeInfoBox(meleeInfoBox);
 		infoBoxManager.removeInfoBox(rangeInfoBox);
 		infoBoxManager.removeInfoBox(mageInfoBox);
 
-		if (this.inNylo()) {
-			meleeInfoBox = new nyloInfobox(this, meleeIcon, meleeHighlight, meleeAggro, "Melee");
-			rangeInfoBox = new nyloInfobox(this, rangeIcon, rangeHighlight, rangeAggro, "Range");
-			mageInfoBox = new nyloInfobox(this, mageIcon, mageHighlight, mageAggro, "Mage");
-
-			infoBoxManager.addInfoBox(meleeInfoBox);
-			infoBoxManager.addInfoBox(rangeInfoBox);
-			infoBoxManager.addInfoBox(mageInfoBox);
+		switch (i){
+			case -2:
+				meleeInfoBox = new nyloInfobox(this, meleeIcon, meleeHighlight, meleeAggro, "Melee");
+				rangeInfoBox = new nyloInfobox(this, rangeIcon, rangeHighlight, rangeAggro, "Range");
+				mageInfoBox = new nyloInfobox(this, mageIcon, mageHighlight, mageAggro, "Mage");
+				break;
+			case 0:
+				meleeInfoBox = new nyloInfobox(this, meleeIcon, meleeHighlight, meleeAggro, "Melee");
+				break;
+			case 1:
+				rangeInfoBox = new nyloInfobox(this, rangeIcon, rangeHighlight, rangeAggro, "Range");
+				break;
+			case 2:
+				mageInfoBox = new nyloInfobox(this, mageIcon, mageHighlight, mageAggro, "Mage");
+				break;
 		}
+
+		infoBoxManager.addInfoBox(meleeInfoBox);
+		infoBoxManager.addInfoBox(rangeInfoBox);
+		infoBoxManager.addInfoBox(mageInfoBox);
 	}
 
 	public boolean inNylo(){
