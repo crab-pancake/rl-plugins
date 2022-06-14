@@ -14,12 +14,7 @@
  */
 package com.socket.plugins.sotetseg;
 
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics2D;
-import java.awt.Polygon;
-import java.awt.Stroke;
+import java.awt.*;
 import java.util.HashSet;
 import java.util.Set;
 import javax.inject.Inject;
@@ -53,15 +48,13 @@ extends Overlay {
             Set<WorldPoint> tiles;
             if (config.showTestOverlay()) {
                 tiles = new HashSet();
-                for (int i = 0; i < 5; ++i) {
-                    try {
-                        WorldPoint worldPoint = client.getLocalPlayer().getWorldLocation();
-                        WorldPoint wp = new WorldPoint(worldPoint.getX(), worldPoint.getY() + i, worldPoint.getPlane());
-                        tiles.add(wp);
-                    }
-                    catch (Exception exception) {
-                        // empty catch block
-                    }
+                try {
+                    WorldPoint worldPoint = client.getLocalPlayer().getWorldLocation();
+                    WorldPoint wp = new WorldPoint(worldPoint.getX() + 2, worldPoint.getY() + 2, worldPoint.getPlane());
+                    tiles.add(wp);
+                }
+                catch (Exception exception) {
+                    // empty catch block
                 }
             } else {
                 tiles = plugin.getMazePings();

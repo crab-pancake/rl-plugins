@@ -17,8 +17,6 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
-import net.runelite.client.ws.PartyService;
-import net.runelite.client.ws.WSClient;
 import org.apache.commons.lang3.ArrayUtils;
 
 import javax.inject.Inject;
@@ -60,10 +58,6 @@ public class SpecPlugin extends Plugin
 	@Inject
 	private ClientThread clientThread;
 	@Inject
-	private WSClient wsClient;
-	@Inject
-	private PartyService party;
-	@Inject
 	private InfoBoxManager infoBoxManager;
 	@Inject
 	private ItemManager itemManager;
@@ -87,7 +81,6 @@ public class SpecPlugin extends Plugin
 	{
 		reset();
 		identifier = config.identifier() ? "special-extended" : "m-specs";
-		wsClient.registerMessage(PartySpecUpdate.class);
 		overlayManager.add(overlay);
 	}
 
@@ -95,7 +88,6 @@ public class SpecPlugin extends Plugin
 	protected void shutDown()
 	{
 		reset();
-		wsClient.unregisterMessage(PartySpecUpdate.class);
 		overlayManager.remove(overlay);
 	}
 
@@ -245,12 +237,6 @@ public class SpecPlugin extends Plugin
 
 							String pName = client.getLocalPlayer()== null ? "null" : client.getLocalPlayer().getName();
 							updateCounter(pName, specialWeapon, null, minSpecHit);
-
-							if (!party.getMembers().isEmpty()) {
-								final PartySpecUpdate partySpecUpdate = new PartySpecUpdate(lastTarget.getId(), specialWeapon, minSpecHit);
-								partySpecUpdate.setMemberId(party.getLocalMember().getMemberId());
-								wsClient.send(partySpecUpdate);
-							}
 							socketSend(pName, lastTarget.getId(), specialWeapon, minSpecHit);
 
 							clearSpec();
@@ -295,13 +281,6 @@ public class SpecPlugin extends Plugin
 			log.debug("Special attack target: id: {} - target: {} - weapon: {} - amount: {}", interactingId, target.getName(), specialWeapon, hit);
 			String pName = Objects.requireNonNull(client.getLocalPlayer()).getName();
 			updateCounter(pName, specialWeapon, null, hit);
-
-			if (!party.getMembers().isEmpty())
-			{
-				final PartySpecUpdate partySpecUpdate = new PartySpecUpdate(interactingId, specialWeapon, hit);
-				partySpecUpdate.setMemberId(party.getLocalMember().getMemberId());
-				wsClient.send(partySpecUpdate);
-			}
 
 			socketSend(pName, interactingId, specialWeapon, hit);
 			clearSpec();
@@ -398,31 +377,6 @@ public class SpecPlugin extends Plugin
 		double damageOutput = (deltaHpExp * modifierBase) / 1.3333d;
 
 		return specialWeapon.isDamage()? (int) Math.ceil(damageOutput) : 1;
-	}
-
-	// disc party plugin
-	@Subscribe
-	public void onPartySpecUpdate(PartySpecUpdate event)
-	{
-		if (party.getLocalMember().getMemberId().equals(event.getMemberId()))
-		{
-			return;
-		}
-
-		String name = party.getMemberById(event.getMemberId()).getName();
-		if (name == null)
-		{
-			return;
-		}
-
-		clientThread.invoke(() ->
-		{
-			if (!interactedNpcIds.contains(event.getNpcId())) {
-				removeCounters();
-				addInteracting(event.getNpcId());
-			}
-			updateCounter(name, event.getWeapon(), null, event.getHit());
-		});
 	}
 
 	private SpecialWeapon usedSpecialWeapon() {

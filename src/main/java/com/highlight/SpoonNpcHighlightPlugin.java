@@ -329,7 +329,7 @@ public class SpoonNpcHighlightPlugin extends Plugin
         for (final NpcSpawn n : npcSpawns) {
             if (event.getNpc().getIndex() == n.index) {
                 int respawnTime = client.getTickCount() - n.diedOnTick + 1;
-                if (respawnTime > 300) {  // get rid of any timers that are too long. TODO: better method?
+                if (respawnTime > 350) {  // get rid of any timers that are too long. Max known (apart from prif bunny) is 350: ugthanki camels
                     continue;
                 }
                 if (n.respawnTime != -1 && n.respawnTime > respawnTime){

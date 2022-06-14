@@ -45,8 +45,8 @@ public class LineOfSightPlugin extends Plugin {
 
 //    @Subscribe
 //    public void onVarClientIntChanged(VarClientIntChanged var){
-//        if (asdf != client.getVar(VarClientInt.INVENTORY_TAB)) {
-//            asdf = client.getVar(VarClientInt.INVENTORY_TAB);
+//        if (TrayNotification != client.getVar(VarClientInt.INVENTORY_TAB)) {
+//            TrayNotification = client.getVar(VarClientInt.INVENTORY_TAB);
 //            if (overlay.losTiles != null) {
 //                System.out.println("player: " + client.getLocalPlayer().getWorldLocation());
 //                System.out.println("dest: " + client.getSelectedSceneTile().getWorldLocation());
