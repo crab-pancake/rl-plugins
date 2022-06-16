@@ -41,6 +41,8 @@ public class SpoonNpcHighlightPlugin extends Plugin
     @Inject
     private SpoonNpcHighlightOverlay overlay;
     @Inject
+    private SpoonNpcMinimapOverlay minimapOverlay;
+    @Inject
     private SpoonNpcHighlightConfig config;
     public ArrayList<String> tileNames = new ArrayList<>();
     public ArrayList<Integer> tileIds = new ArrayList<>();
@@ -76,6 +78,7 @@ public class SpoonNpcHighlightPlugin extends Plugin
     protected void startUp() {
         reset();
         overlayManager.add(overlay);
+        overlayManager.add(minimapOverlay);
         splitNameList(config.tileNames(), tileNames);
         splitIdList(config.tileIds(), tileIds);
         splitNameList(config.trueTileNames(), trueTileNames);
@@ -99,6 +102,7 @@ public class SpoonNpcHighlightPlugin extends Plugin
     protected void shutDown() {
         reset();
         overlayManager.remove(overlay);
+        overlayManager.remove(minimapOverlay);
     }
     
     private void reset() {

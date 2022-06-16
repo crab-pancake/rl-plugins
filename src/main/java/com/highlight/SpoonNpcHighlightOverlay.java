@@ -198,10 +198,10 @@ public class SpoonNpcHighlightOverlay extends Overlay
                             // temporarily use last spawn location as respawn tiles
                             lp = LocalPoint.fromWorld(client, n.spawnLocations.get(n.spawnLocations.size() - 1));
                         }
-
                         if (lp == null) {
                             continue;
                         }
+
                         Color raveColor = plugin.turboIds.contains(n.id) ? plugin.turboColors.get(plugin.turboIds.indexOf(n.id) + plugin.turboNames.size()) : Color.WHITE;
                         LocalPoint centerLp = new LocalPoint(lp.getX() + 128 * (n.size - 1) / 2, lp.getY() + 128 * (n.size - 1) / 2);
                         if (config.respawnTimerBox()) {
@@ -224,7 +224,12 @@ public class SpoonNpcHighlightOverlay extends Overlay
                                 renderPoly(graphics, oColor, fColor, tilePoly, raveColor != Color.WHITE ? (double) plugin.turboTileWidth : config.highlightThiCC());
                             }
                         }
-                        if (config.respawnTimer() == SpoonNpcHighlightConfig.respawnTimerMode.SECONDS) {
+
+                        // check if timer is too high
+                        if ((client.getTickCount() - n.diedOnTick) < n.respawnTime){
+                            text = "?";
+                        }
+                        else if (config.respawnTimer() == SpoonNpcHighlightConfig.respawnTimerMode.SECONDS) {
                             Instant now = Instant.now();
                             double sinceLast = (double) (now.toEpochMilli() - plugin.lastTickUpdate.toEpochMilli()) / 1000.0;
                             double baseTick = (double) (n.respawnTime - (client.getTickCount() - n.diedOnTick)) * 0.6;
@@ -236,15 +241,18 @@ public class SpoonNpcHighlightOverlay extends Overlay
                         } else {
                             text = String.valueOf(n.respawnTime - (client.getTickCount() - n.diedOnTick));
                         }
-                        if ((textLoc = Perspective.getCanvasTextLocation(client, graphics, centerLp, text, 0)) == null)
-                            continue;
-                        Point pointShadow = new Point(textLoc.getX() + 1, textLoc.getY() + 1);
-                        OverlayUtil.renderTextLocation(graphics, pointShadow, text, Color.BLACK);
-                        if (raveColor != Color.WHITE) {
-                            OverlayUtil.renderTextLocation(graphics, textLoc, text, new Color(raveColor.getRed(), raveColor.getGreen(), raveColor.getBlue(), random.nextInt(205) + 50));
-                            continue;
+
+                        textLoc = Perspective.getCanvasTextLocation(client, graphics, centerLp, text, 0);
+                        if (textLoc != null) {
+                            Point pointShadow = new Point(textLoc.getX() + 1, textLoc.getY() + 1);
+                            OverlayUtil.renderTextLocation(graphics, pointShadow, text, Color.BLACK);
+                            if (raveColor != Color.WHITE) {
+                                OverlayUtil.renderTextLocation(graphics, textLoc, text, new Color(raveColor.getRed(), raveColor.getGreen(), raveColor.getBlue(), random.nextInt(205) + 50));
+                            }
+                            else {
+                                OverlayUtil.renderTextLocation(graphics, textLoc, text, config.respawnTimerColor());
+                            }
                         }
-                        OverlayUtil.renderTextLocation(graphics, textLoc, text, config.respawnTimerColor());
                     }
                 }
             }
