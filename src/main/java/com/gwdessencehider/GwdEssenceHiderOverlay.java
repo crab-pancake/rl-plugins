@@ -35,16 +35,24 @@ class GwdEssenceHiderOverlay extends OverlayPanel
         if (this.plugin.gwdWidget) {
             this.panelComponent.getChildren().clear();
             if (this.plugin.armaKc > 0) {
-                this.panelComponent.getChildren().add(LineComponent.builder().leftColor(this.config.textColor() ? this.config.armaColor() : this.config.defaultColor()).left((this.config.godMode() == GwdEssenceHiderConfig.GodMode.FULL_NAME) ? "Armadyl: " : "Arma: ").rightColor(this.config.textColor() ? this.config.armaColor() : this.config.defaultColor()).right(String.valueOf(this.plugin.armaKc)).build());
+                this.panelComponent.getChildren().add(LineComponent.builder()
+                        .leftColor(this.config.textColor() ? this.config.armaColor() : this.config.defaultColor()).left((this.config.godMode() == GwdEssenceHiderConfig.GodMode.FULL_NAME) ? "Armadyl: " : "Arma: ")
+                        .rightColor(this.config.textColor() ? this.config.armaColor() : this.config.defaultColor()).right(String.valueOf(this.plugin.armaKc)).build());
             }
             if (this.plugin.bandosKc > 0) {
-                this.panelComponent.getChildren().add(LineComponent.builder().leftColor(this.config.textColor() ? this.config.bandosColor() : this.config.defaultColor()).left("Bandos: ").rightColor(this.config.textColor() ? this.config.bandosColor() : this.config.defaultColor()).right(String.valueOf(this.plugin.bandosKc)).build());
+                this.panelComponent.getChildren().add(LineComponent.builder()
+                        .leftColor(this.config.textColor() ? this.config.bandosColor() : this.config.defaultColor()).left("Bandos: ")
+                        .rightColor(this.config.textColor() ? this.config.bandosColor() : this.config.defaultColor()).right(String.valueOf(this.plugin.bandosKc)).build());
             }
             if (this.plugin.saraKc > 0) {
-                this.panelComponent.getChildren().add(LineComponent.builder().leftColor(this.config.textColor() ? this.config.saraColor() : this.config.defaultColor()).left((this.config.godMode() == GwdEssenceHiderConfig.GodMode.FULL_NAME) ? "Saradomin: " : "Sara: ").rightColor(this.config.textColor() ? this.config.saraColor() : this.config.defaultColor()).right(String.valueOf(this.plugin.saraKc)).build());
+                this.panelComponent.getChildren().add(LineComponent.builder()
+                        .leftColor(this.config.textColor() ? this.config.saraColor() : this.config.defaultColor()).left((this.config.godMode() == GwdEssenceHiderConfig.GodMode.FULL_NAME) ? "Saradomin: " : "Sara: ")
+                        .rightColor(this.config.textColor() ? this.config.saraColor() : this.config.defaultColor()).right(String.valueOf(this.plugin.saraKc)).build());
             }
             if (this.plugin.zammyKc > 0) {
-                this.panelComponent.getChildren().add(LineComponent.builder().leftColor(this.config.textColor() ? this.config.zammyColor() : this.config.defaultColor()).left((this.config.godMode() == GwdEssenceHiderConfig.GodMode.FULL_NAME) ? "Zamorak: " : "Zammy: ").rightColor(this.config.textColor() ? this.config.zammyColor() : this.config.defaultColor()).right(String.valueOf(this.plugin.zammyKc)).build());
+                this.panelComponent.getChildren().add(LineComponent.builder()
+                        .leftColor(this.config.textColor() ? this.config.zammyColor() : this.config.defaultColor()).left((this.config.godMode() == GwdEssenceHiderConfig.GodMode.FULL_NAME) ? "Zamorak: " : "Zammy: ")
+                        .rightColor(this.config.textColor() ? this.config.zammyColor() : this.config.defaultColor()).right(String.valueOf(this.plugin.zammyKc)).build());
             }
             if (this.plugin.nexKc > 0) {
                 this.panelComponent.getChildren().add(LineComponent.builder().leftColor(Color.MAGENTA).left("Nex: ").rightColor(Color.MAGENTA).right(String.valueOf(this.plugin.nexKc)).build());
