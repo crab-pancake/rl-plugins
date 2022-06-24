@@ -1,0 +1,22 @@
+/*
+ * Decompiled with CFR 0.150.
+ */
+package com.pvpplayerindicators;
+
+public enum PvPPlayerNameLocation {
+    DISABLED("Disabled"),
+    ABOVE_HEAD("Above head"),
+    MODEL_CENTER("Center of model"),
+    MODEL_RIGHT("Right of model");
+
+    private final String name;
+
+    public String toString() {
+        return this.name;
+    }
+
+    private PvPPlayerNameLocation(String name) {
+        this.name = name;
+    }
+}
+
