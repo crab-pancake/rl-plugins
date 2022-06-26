@@ -8,7 +8,7 @@
  *  net.runelite.client.config.Keybind
  *  net.runelite.client.config.Range
  */
-package net.runelite.client.plugins.detachedcamerahotkey;
+package com.detachedcamerahotkey;
 
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
@@ -20,13 +20,13 @@ import net.runelite.client.config.Range;
 public interface DcHotkeyConfig
 extends Config {
     @ConfigItem(name="Enable/Disable Hotkey", keyName="dcHotkey", description="Set a hotkey to enable/disable the detached camera", position=0)
-    default public Keybind getDCHotkey() {
+    default Keybind getDCHotkey() {
         return new Keybind(112, 128);
     }
 
     @ConfigItem(name="Camera Speed", keyName="dcSpeed", description="Dynamically change the detached camera speed", position=1)
     @Range(min=1)
-    default public int getDCSpeed() {
+    default int getDCSpeed() {
         return 12;
     }
 }

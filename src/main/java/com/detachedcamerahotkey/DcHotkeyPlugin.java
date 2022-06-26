@@ -15,7 +15,7 @@
  *  net.runelite.client.util.HotkeyListener
  *  org.pf4j.Extension
  */
-package net.runelite.client.plugins.detachedcamerahotkey;
+package com.detachedcamerahotkey;
 
 import com.google.inject.Provides;
 import javax.inject.Inject;
@@ -23,18 +23,16 @@ import net.runelite.api.Client;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
-import net.runelite.client.input.KeyListener;
 import net.runelite.client.input.KeyManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
-import net.runelite.client.plugins.detachedcamerahotkey.DcHotkeyConfig;
 import net.runelite.client.util.HotkeyListener;
-import org.pf4j.Extension;
 
-@Extension
-@PluginDescriptor(name="[S] Detached Camera Hotkey", description="Hotkey to enable/disable the detached camera. Not made by me", tags={"hotkey", "detached", "camera", "big mfkn tyler"}, enabledByDefault=false)
-public class DcHotkeyPlugin
-extends Plugin {
+@PluginDescriptor(name="[S] Detached Camera Hotkey",
+        description="Hotkey to enable/disable the detached camera. Not made by me",
+        tags={"hotkey", "detached", "camera"},
+        enabledByDefault=false)
+public class DcHotkeyPlugin extends Plugin {
     @Inject
     private Client client;
     @Inject
@@ -55,15 +53,15 @@ extends Plugin {
 
     @Provides
     DcHotkeyConfig provideConfig(ConfigManager cm) {
-        return (DcHotkeyConfig)cm.getConfig(DcHotkeyConfig.class);
+        return cm.getConfig(DcHotkeyConfig.class);
     }
 
     protected void startUp() {
-        this.keyManager.registerKeyListener((KeyListener)this.masterSwitch);
+        this.keyManager.registerKeyListener(this.masterSwitch);
     }
 
     protected void shutDown() {
-        this.keyManager.unregisterKeyListener((KeyListener)this.masterSwitch);
+        this.keyManager.unregisterKeyListener(this.masterSwitch);
         this.toggled = false;
         this.client.setOculusOrbState(0);
     }
