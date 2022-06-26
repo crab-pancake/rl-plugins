@@ -248,11 +248,6 @@ public interface SpoonNpcHighlightConfig extends Config
     
     @ConfigItem(position = 17, keyName = "deadNpcMenuColor", name = "Dead NPC Menu Color", description = "Highlights names in right click menu entry when NPC is dead")
     Color deadNpcMenuColor();
-
-    @ConfigItem(position = 18, keyName = "deprioritiseDead", name = "Deprioritise dead", description = "Deprioritises menu options for dead NPCs")
-    default boolean deprioritiseDead() {
-        return false;
-    }
     
     @ConfigItem(position = 19, keyName = "respawnTimer", name = "Respawn Timer", description = "Shows timer for when a marked NPC will respawn")
     default respawnTimerMode respawnTimer() {

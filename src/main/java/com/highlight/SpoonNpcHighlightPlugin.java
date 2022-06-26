@@ -233,9 +233,6 @@ public class SpoonNpcHighlightPlugin extends Plugin
             MenuEntry menuEntry = menuEntries[menuEntries.length - 1];
             if (npc.isDead()) {
                 color = config.deadNpcMenuColor();
-                if (config.deprioritiseDead() && npc.getName() != null && !config.ignoreDeadExclusion().contains(npc.getName().toLowerCase())){
-                    menuEntry.setDeprioritized(true);
-                }
             } else if (config.highlightMenuNames() && npc.getName() != null && checkAllLists(npc)) {
                 color = config.tagStyleMode() == SpoonNpcHighlightConfig.tagStyleMode.TURBO ? Color.getHSBColor(random.nextFloat(), 1.0f, 1.0f) : config.highlightColor();
             }
