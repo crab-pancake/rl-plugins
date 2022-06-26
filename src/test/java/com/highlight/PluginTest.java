@@ -1,9 +1,6 @@
 package com.highlight;
 
-import com.mplayerindicators.PlayerIndicatorsConfig;
-import com.mplayerindicators.PlayerIndicatorsPlugin;
-import com.neverlog.NeverLog;
-import com.nylo.nyloPlugin;
+import com.mplayerindicators.MPlayerIndicatorsPlugin;
 import net.runelite.client.RuneLite;
 import net.runelite.client.externalplugins.ExternalPluginManager;
 
@@ -12,7 +9,7 @@ public class PluginTest
 {
 	public static void main(String[] args) throws Exception
 	{
-		ExternalPluginManager.loadBuiltin(PlayerIndicatorsPlugin.class);
+		ExternalPluginManager.loadBuiltin(MPlayerIndicatorsPlugin.class);
 		RuneLite.main(args);
 	}
 }

@@ -30,16 +30,18 @@ import net.runelite.client.ui.overlay.*;
 import javax.inject.Inject;
 import java.awt.*;
 
-public class PlayerIndicatorsTileOverlay extends Overlay
+public class MPlayerIndicatorsTileOverlay extends Overlay
 {
-	private final PlayerIndicatorsService playerIndicatorsService;
-	private final PlayerIndicatorsConfig config;
+	private final MPlayerIndicatorsService MPlayerIndicatorsService;
+	private final MPlayerIndicatorsConfig config;
+	private final MPlayerIndicatorsPlugin plugin;
 
 	@Inject
-	private PlayerIndicatorsTileOverlay(PlayerIndicatorsConfig config, PlayerIndicatorsService playerIndicatorsService)
+	private MPlayerIndicatorsTileOverlay(MPlayerIndicatorsConfig config, MPlayerIndicatorsService MPlayerIndicatorsService,MPlayerIndicatorsPlugin plugin)
 	{
 		this.config = config;
-		this.playerIndicatorsService = playerIndicatorsService;
+		this.MPlayerIndicatorsService = MPlayerIndicatorsService;
+		this.plugin = plugin;
 		setLayer(OverlayLayer.ABOVE_SCENE);
 		setPosition(OverlayPosition.DYNAMIC);
 		setPriority(OverlayPriority.MED);
@@ -48,18 +50,18 @@ public class PlayerIndicatorsTileOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!config.drawTiles())
+		if (!config.drawTiles() && !(plugin.isPVP && config.pvpHighlight()))
 		{
 			return null;
 		}
 
-		playerIndicatorsService.forEachPlayer((player, color) ->
+		MPlayerIndicatorsService.forEachPlayer((player, color) ->
 		{
 			final Polygon poly = player.getCanvasTilePoly();
 
 			if (poly != null)
 			{
-				OverlayUtil.renderPolygon(graphics, poly, color, new Color(0,0,0,0), new BasicStroke(2));
+				OverlayUtil.renderPolygon(graphics, poly, color, new Color(0,0,0,0), new BasicStroke(1.5F));
 			}
 		});
 

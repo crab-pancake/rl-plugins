@@ -34,14 +34,14 @@ import java.awt.*;
 import java.util.function.BiConsumer;
 
 @Singleton
-public class PlayerIndicatorsService
+public class MPlayerIndicatorsService
 {
 	private final Client client;
-	private final PlayerIndicatorsConfig config;
-	private final PlayerIndicatorsPlugin plugin;
+	private final MPlayerIndicatorsConfig config;
+	private final MPlayerIndicatorsPlugin plugin;
 
 	@Inject
-	private PlayerIndicatorsService(Client client, PlayerIndicatorsConfig config, PlayerIndicatorsPlugin plugin)
+	private MPlayerIndicatorsService(Client client, MPlayerIndicatorsConfig config, MPlayerIndicatorsPlugin plugin)
 	{
 		this.config = config;
 		this.client = client;
@@ -94,9 +94,13 @@ public class PlayerIndicatorsService
 			{
 				consumer.accept(player, config.getClanMemberColor());
 			}
-			else if ((config.highlightOthers() || config.pvpHighlight()) && !isFriendsChatMember && !isClanMember)
+			else if ((config.highlightOthers() || pvpHighlight) && !isFriendsChatMember && !isClanMember)
 			{
-				consumer.accept(player, config.getOthersColor());
+				if (pvpHighlight && plugin.isAttackable(client, player))
+				{
+					consumer.accept(player, config.attackableColour());
+				}
+				else consumer.accept(player, config.getOthersColor());
 			}
 		}
 	}

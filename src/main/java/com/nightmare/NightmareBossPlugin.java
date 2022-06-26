@@ -121,9 +121,6 @@ public class NightmareBossPlugin extends Plugin
 			return true;
 		}
 		int npcId = client.getVar(VarPlayer.HP_HUD_NPC_ID);
-		if (npcId >= 11153 && npcId <= 11155){
-			return true;
-		}
-		return (npcId >= 9416 && npcId <= 9424);
+		return (npcId >= 9416 && npcId <= 9424) || (npcId >= 11153 && npcId <= 11155);
 	}
 }

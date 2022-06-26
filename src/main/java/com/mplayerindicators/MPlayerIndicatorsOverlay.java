@@ -43,23 +43,23 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 
 @Singleton
-public class PlayerIndicatorsOverlay extends Overlay
+public class MPlayerIndicatorsOverlay extends Overlay
 {
 	private static final int ACTOR_OVERHEAD_TEXT_MARGIN = 40;
 	private static final int ACTOR_HORIZONTAL_TEXT_MARGIN = 10;
 
-	private final PlayerIndicatorsService playerIndicatorsService;
-	private final PlayerIndicatorsConfig config;
-	private final PlayerIndicatorsPlugin plugin;
+	private final MPlayerIndicatorsService MPlayerIndicatorsService;
+	private final MPlayerIndicatorsConfig config;
+	private final MPlayerIndicatorsPlugin plugin;
 	private final ChatIconManager chatIconManager;
 
 	@Inject
-	private PlayerIndicatorsOverlay(PlayerIndicatorsConfig config, PlayerIndicatorsService playerIndicatorsService,
-									PlayerIndicatorsPlugin plugin,
-                                    ChatIconManager chatIconManager)
+	private MPlayerIndicatorsOverlay(MPlayerIndicatorsConfig config, MPlayerIndicatorsService MPlayerIndicatorsService,
+									 MPlayerIndicatorsPlugin plugin,
+									 ChatIconManager chatIconManager)
 	{
 		this.config = config;
-		this.playerIndicatorsService = playerIndicatorsService;
+		this.MPlayerIndicatorsService = MPlayerIndicatorsService;
 		this.plugin = plugin;
 		this.chatIconManager = chatIconManager;
 		setPosition(OverlayPosition.DYNAMIC);
@@ -69,7 +69,7 @@ public class PlayerIndicatorsOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		playerIndicatorsService.forEachPlayer((player, color) -> renderPlayerOverlay(graphics, player, color));
+		MPlayerIndicatorsService.forEachPlayer((player, color) -> renderPlayerOverlay(graphics, player, color));
 		return null;
 	}
 
@@ -95,7 +95,7 @@ public class PlayerIndicatorsOverlay extends Overlay
 		String name = Text.sanitize(player.getName());
 		if (plugin.isPVP)
 		{
-			name = name + " ("+player.getCombatLevel()+")";
+			name = name + "  ("+player.getCombatLevel()+")";
 		}
 
 		Point textLocation = player.getCanvasTextLocation(graphics, name, zOffset);
@@ -120,7 +120,7 @@ public class PlayerIndicatorsOverlay extends Overlay
 		BufferedImage rankImage = null;
 		if (player.isFriendsChatMember() && config.highlightFriendsChat() && config.showFriendsChatRanks())
 		{
-			final FriendsChatRank rank = playerIndicatorsService.getFriendsChatRank(player);
+			final FriendsChatRank rank = MPlayerIndicatorsService.getFriendsChatRank(player);
 
 			if (rank != FriendsChatRank.UNRANKED)
 			{
@@ -129,7 +129,7 @@ public class PlayerIndicatorsOverlay extends Overlay
 		}
 		else if (player.isClanMember() && config.highlightClanMembers() && config.showClanChatRanks())
 		{
-			ClanTitle clanTitle = playerIndicatorsService.getClanTitle(player);
+			ClanTitle clanTitle = MPlayerIndicatorsService.getClanTitle(player);
 			if (clanTitle != null)
 			{
 				rankImage = chatIconManager.getRankImage(clanTitle);

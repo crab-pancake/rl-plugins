@@ -30,7 +30,7 @@ import net.runelite.client.plugins.playerindicators.PlayerNameLocation;
 import java.awt.*;
 
 @ConfigGroup("mplayerindicators")
-public interface PlayerIndicatorsConfig extends Config
+public interface MPlayerIndicatorsConfig extends Config
 {
 	@ConfigSection(
 		name = "Highlight Options",
@@ -290,5 +290,17 @@ public interface PlayerIndicatorsConfig extends Config
 	)
 	default int playerAlertSoundVolume() {
 		return 20;
+	}
+
+	@ConfigItem(
+			position = 9,
+			keyName = "attackableColour",
+			name = "Attackable player colour",
+			description = "Colour of attackable players when in pvp areas",
+			section = pvpSection
+	)
+	default Color attackableColour()
+	{
+		return new Color(255, 0, 255);
 	}
 }

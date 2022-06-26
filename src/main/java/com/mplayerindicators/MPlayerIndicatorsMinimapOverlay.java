@@ -37,16 +37,18 @@ import net.runelite.client.ui.overlay.OverlayPriority;
 import net.runelite.client.ui.overlay.OverlayUtil;
 
 @Singleton
-public class PlayerIndicatorsMinimapOverlay extends Overlay
+public class MPlayerIndicatorsMinimapOverlay extends Overlay
 {
-    private final PlayerIndicatorsService playerIndicatorsService;
-    private final PlayerIndicatorsConfig config;
+    private final MPlayerIndicatorsService MPlayerIndicatorsService;
+    private final MPlayerIndicatorsConfig config;
+    private final MPlayerIndicatorsPlugin plugin;
 
     @Inject
-    private PlayerIndicatorsMinimapOverlay(PlayerIndicatorsConfig config, PlayerIndicatorsService playerIndicatorsService)
+    private MPlayerIndicatorsMinimapOverlay(MPlayerIndicatorsConfig config, MPlayerIndicatorsService MPlayerIndicatorsService, MPlayerIndicatorsPlugin plugin)
     {
         this.config = config;
-        this.playerIndicatorsService = playerIndicatorsService;
+        this.MPlayerIndicatorsService = MPlayerIndicatorsService;
+        this.plugin = plugin;
         setLayer(OverlayLayer.ABOVE_WIDGETS);
         setPosition(OverlayPosition.DYNAMIC);
         setPriority(OverlayPriority.HIGH);
@@ -55,17 +57,21 @@ public class PlayerIndicatorsMinimapOverlay extends Overlay
     @Override
     public Dimension render(Graphics2D graphics)
     {
-        playerIndicatorsService.forEachPlayer((player, color) -> renderPlayerOverlay(graphics, player, color));
+        MPlayerIndicatorsService.forEachPlayer((player, color) -> renderPlayerOverlay(graphics, player, color));
         return null;
     }
 
-    private void renderPlayerOverlay(Graphics2D graphics, Player actor, Color color)
+    private void renderPlayerOverlay(Graphics2D graphics, Player player, Color color)
     {
-        final String name = actor.getName().replace('\u00A0', ' ');
-
         if (config.drawMinimapNames())
         {
-            final net.runelite.api.Point minimapLocation = actor.getMinimapLocation();
+            final net.runelite.api.Point minimapLocation = player.getMinimapLocation();
+
+            String name = player.getName().replace('\u00A0', ' ');
+            if (plugin.isPVP)
+            {
+                name = name + " ("+player.getCombatLevel()+")";
+            }
 
             if (minimapLocation != null)
             {

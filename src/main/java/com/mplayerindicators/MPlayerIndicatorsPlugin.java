@@ -54,7 +54,7 @@ import static net.runelite.api.MenuAction.*;
 	description = "Also highlights offline friends",
 	tags = {"highlight", "minimap", "overlay", "players"}
 )
-public class PlayerIndicatorsPlugin extends Plugin
+public class MPlayerIndicatorsPlugin extends Plugin
 {
 	private static final String TRADING_WITH_TEXT = "Trading with: ";
 	private static final Pattern WILDERNESS_LEVEL_PATTERN = Pattern.compile("^Level: (\\d+)$");
@@ -63,19 +63,19 @@ public class PlayerIndicatorsPlugin extends Plugin
 	private OverlayManager overlayManager;
 
 	@Inject
-	private PlayerIndicatorsConfig config;
+	private MPlayerIndicatorsConfig config;
 
 	@Inject
-	private PlayerIndicatorsOverlay playerIndicatorsOverlay;
+	private MPlayerIndicatorsOverlay overlay;
 
 	@Inject
-	private PlayerIndicatorsTileOverlay playerIndicatorsTileOverlay;
+	private MPlayerIndicatorsTileOverlay tileOverlay;
 
 	@Inject
-	private PlayerIndicatorsMinimapOverlay playerIndicatorsMinimapOverlay;
+	private MPlayerIndicatorsMinimapOverlay minimapOverlay;
 
 	@Inject
-	private PlayerIndicatorsService playerIndicatorsService;
+	private MPlayerIndicatorsService MPlayerIndicatorsService;
 
 	@Inject
 	private Client client;
@@ -90,43 +90,48 @@ public class PlayerIndicatorsPlugin extends Plugin
 	private Notifier notifier;
 
 	boolean isPVP;
+	int lastPlayedTick = -1;
 
 	@Provides
-	PlayerIndicatorsConfig provideConfig(ConfigManager configManager)
+	MPlayerIndicatorsConfig provideConfig(ConfigManager configManager)
 	{
-		return configManager.getConfig(PlayerIndicatorsConfig.class);
+		return configManager.getConfig(MPlayerIndicatorsConfig.class);
 	}
 
 	@Override
 	protected void startUp() throws Exception
 	{
 		isPVP = false;
-		overlayManager.add(playerIndicatorsOverlay);
-		overlayManager.add(playerIndicatorsTileOverlay);
-		overlayManager.add(playerIndicatorsMinimapOverlay);
-		checkPVP(client);
+		overlayManager.add(overlay);
+		overlayManager.add(tileOverlay);
+		overlayManager.add(minimapOverlay);
 	}
 
 	@Override
 	protected void shutDown() throws Exception
 	{
-		overlayManager.remove(playerIndicatorsOverlay);
-		overlayManager.remove(playerIndicatorsTileOverlay);
-		overlayManager.remove(playerIndicatorsMinimapOverlay);
+		overlayManager.remove(overlay);
+		overlayManager.remove(tileOverlay);
+		overlayManager.remove(minimapOverlay);
+		lastPlayedTick = -1;
 	}
 
 	@Subscribe
 	private void onPlayerSpawned(PlayerSpawned event)
 	{
-		if (config.pvpAlertSound() || !isPVP) return;
+		if (!config.pvpAlertSound() || !isPVP) return;
 
 		Player player = event.getPlayer();
+		if (player == client.getLocalPlayer()) return;
 
 		// later: check what player is wearing also?
-		if (config.pvpAlertSound() && !player.getName().equalsIgnoreCase(client.getLocalPlayer().getName())
+		if (config.pvpAlertSound()
 				&& !client.isFriended(player.getName(),false)
 				&& isAttackable(client, player)) {
-			client.playSoundEffect(3926, config.playerAlertSoundVolume()); // ge error sound
+			if (lastPlayedTick < client.getTickCount()) { // play max once per tick
+				client.playSoundEffect(3924, config.playerAlertSoundVolume());
+				lastPlayedTick = client.getTickCount();
+				}
 			notifier.notify("Attackable player spawned!");
 			client.addChatMessage(ChatMessageType.CONSOLE,"", "Player spawned: "+player.getName()+" ("+player.getCombatLevel()+")","");
 		}
@@ -135,41 +140,40 @@ public class PlayerIndicatorsPlugin extends Plugin
 	@Subscribe
 	private void onVarbitChanged(VarbitChanged event)
 	{
-		if (event.getIndex() == 5963)
-		{
-			checkPVP(client);
-		}
+		checkPVP(client);
 	}
 
 	@Subscribe
 	private void onWorldChanged(WorldChanged event)
 	{
-		if (WorldType.isPvpWorld(client.getWorldType()))
-		{
-			checkPVP(client);
-		}
+		checkPVP(client);
 	}
 
-	private boolean isAttackable(Client client, Player player)
+	boolean isAttackable(Client client, Player player)
 	{
 		final Widget wildernessLevelWidget = client.getWidget(WidgetInfo.PVP_WILDERNESS_LEVEL);
-		if (wildernessLevelWidget == null || !WorldType.isPvpWorld(client.getWorldType()))
+			// TODO: make wildy level a separate int that updates on widget changed, so it doesnt get rerun every time a player spawns? probably not that expensive rn tbh
+		if (wildernessLevelWidget == null && !WorldType.isPvpWorld(client.getWorldType()))
 		{
 			return false;
 		}
 
-		final String wildernessLevelText = wildernessLevelWidget.getText();
-		final Matcher m = WILDERNESS_LEVEL_PATTERN.matcher(wildernessLevelText);
-		if (!m.matches())  // TODO: check exactly how this works. The combat level plugin treats this bit weirdly
+		int wildyLvl = 0;
+
+		if (wildernessLevelWidget != null)
 		{
-			return false;
+			final String wildernessLevelText = wildernessLevelWidget.getText();
+			final Matcher m = WILDERNESS_LEVEL_PATTERN.matcher(wildernessLevelText);
+			if (m.matches()) {
+				wildyLvl = Integer.parseInt(m.group(1)) + 1; // add +/- 1 level margin for safety
+			}
 		}
 
-		final int wildernessLevel = Integer.parseInt(m.group(1)) + (WorldType.isPvpWorld(client.getWorldType()) ? 15 : 0);
+		final int combatLvlRange = wildyLvl + (WorldType.isPvpWorld(client.getWorldType()) ? 15 : 0);
 		final int combatLevel = client.getLocalPlayer().getCombatLevel();
 
-		final int minLevel = Math.max(3, combatLevel - wildernessLevel - 2); // add 2 levels margin for safety
-		final int maxLevel = Math.min(126, combatLevel + wildernessLevel + 2);
+		final int minLevel = Math.max(3, combatLevel - combatLvlRange);
+		final int maxLevel = Math.min(126, combatLevel + combatLvlRange);
 
 		return player.getCombatLevel() >= minLevel && player.getCombatLevel() <= maxLevel;
 	}
@@ -253,7 +257,7 @@ public class PlayerIndicatorsPlugin extends Plugin
 
 			if (config.showFriendsChatRanks())
 			{
-				FriendsChatRank rank = playerIndicatorsService.getFriendsChatRank(player);
+				FriendsChatRank rank = MPlayerIndicatorsService.getFriendsChatRank(player);
 				if (rank != UNRANKED)
 				{
 					image = chatIconManager.getIconNumber(rank);
@@ -270,7 +274,7 @@ public class PlayerIndicatorsPlugin extends Plugin
 
 			if (config.showClanChatRanks())
 			{
-				ClanTitle clanTitle = playerIndicatorsService.getClanTitle(player);
+				ClanTitle clanTitle = MPlayerIndicatorsService.getClanTitle(player);
 				if (clanTitle != null)
 				{
 					image = chatIconManager.getIconNumber(clanTitle);
@@ -362,9 +366,7 @@ public class PlayerIndicatorsPlugin extends Plugin
 	public void checkPVP(Client client)
 	{
 		clientThread.invokeLater(() -> {
-			System.out.println("checking pvp");
 			isPVP = client.getVarbitValue(5963) == 1 || WorldType.isPvpWorld(client.getWorldType());
-			System.out.println(isPVP);
 		});
 	}
 }
