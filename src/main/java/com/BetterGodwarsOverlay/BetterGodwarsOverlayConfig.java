@@ -68,6 +68,17 @@ public interface BetterGodwarsOverlayConfig extends Config
 	}
 
 	@ConfigItem(
+			keyName = "hideZero",
+			name = "Hide Zero",
+			description = "Hide any gods with 0 kc from the overlay",
+			section = hideSection
+	)
+	default boolean hideZero()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = "hideArmadyl",
 		name = "Hide Armadyl",
 		description = "Hide Armadyl killcount from the overlay",
