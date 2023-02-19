@@ -4,7 +4,10 @@ import com.google.inject.Inject;
 import com.google.inject.Provides;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
+import net.runelite.api.GameState;
 import net.runelite.api.events.ChatMessage;
+import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.GameTick;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
@@ -25,6 +28,8 @@ public class TickTimestampPlugin extends Plugin
 	private TickTimestampConfig config;
 
 	private int lastTickCount;
+	private int loginClientTick = 0;
+//	private boolean ready = true;
 
 	@Provides
 	TickTimestampConfig provideConfig(ConfigManager configManager)
@@ -41,10 +46,25 @@ public class TickTimestampPlugin extends Plugin
 			return;
 		}
 
-		int tickCount = client.getTickCount();
-		int timestamp = config.deltaTick() ? (tickCount - lastTickCount) : tickCount;
-		lastTickCount = tickCount;
+		int timestamp = config.deltaTick() ? (client.getTickCount() - lastTickCount) : (client.getTickCount() - loginClientTick + 1);
+		lastTickCount = client.getTickCount();
 
 		event.getMessageNode().setValue(timestamp + ": " + event.getMessageNode().getValue());
+	}
+
+	@Subscribe
+	public void onGameStateChanged(GameStateChanged event)
+	{
+		GameState state = event.getGameState();
+
+		switch (state)
+		{
+			case LOGGING_IN:
+			case HOPPING:
+			case CONNECTION_LOST:
+//				ready = true;  // logged out and should reset once logged in
+				loginClientTick = client.getTickCount();
+				break;
+		}
 	}
 }
