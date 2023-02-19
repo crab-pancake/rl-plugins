@@ -44,25 +44,22 @@ public class BetterGodwarsOverlayOverlay extends OverlayPanel
 		{
 			godwars.setHidden(true);
 
-			for (BetterGodwarsOverlayGods gods : BetterGodwarsOverlayGods.values())
+			for (BetterGodwarsOverlayGods god : BetterGodwarsOverlayGods.values())
 			{
-				final int killcounts = client.getVarbitValue(gods.getKillCountVarbit().getId());
+				final int killcount = client.getVarbitValue(god.getKillCountVarbit().getId());
 
-				if (!hideGods[i] && (!config.hideZero() || killcounts != 0))
+				if (!hideGods[i] && (killcount != 0 || !config.hideZero()))
 				{
 					panelComponent.getChildren().add(LineComponent.builder()
-						.left(config.shortGodNames() ? gods.getName().substring(0, 2) : gods.getName())
-						.right(Integer.toString(killcounts))
+						.left(config.shortGodNames() ? god.getName().substring(0, 2) : god.getName())
 						.leftColor(config.godNameColor())
-						.rightColor(killcounts >= config.highlightOnKC() ? config.highlightOnKCColor() : Color.WHITE)
+						.right(Integer.toString(killcount))
+						.rightColor(killcount >= config.highlightOnKC() ? config.highlightOnKCColor() : Color.WHITE)
 						.build());
 				}
 				i++;
 			}
 		}
-
 		return super.render(graphics);
-
-
 	}
 }

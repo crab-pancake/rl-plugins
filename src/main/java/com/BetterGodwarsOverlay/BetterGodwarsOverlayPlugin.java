@@ -47,7 +47,6 @@ public class BetterGodwarsOverlayPlugin extends Plugin
 	protected void startUp() throws Exception
 	{
 		overlayManager.add(gwdOverlay);
-
 	}
 
 	@Override
