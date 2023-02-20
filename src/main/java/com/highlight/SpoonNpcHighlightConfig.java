@@ -16,7 +16,7 @@ import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.Config;
 import org.apache.commons.text.WordUtils;
 
-@ConfigGroup("SpoonNpcHighlight")
+@ConfigGroup("BetterNpcHighlight")
 public interface SpoonNpcHighlightConfig extends Config
 {
     @ConfigSection(name = "Tile", description = "Tile Plugins", position = 1, closedByDefault = true)

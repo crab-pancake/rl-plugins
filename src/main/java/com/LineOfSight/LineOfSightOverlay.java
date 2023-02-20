@@ -51,7 +51,9 @@ public class LineOfSightOverlay extends Overlay {
 
                 if (config.hoveredTile()) {
                     if (config.origin() == PLAYER)
-                    losTiles = hasLos(client.getLocalPlayer().getWorldLocation(), WorldPoint.fromLocal(client, client.getSelectedSceneTile().getLocalLocation()));
+					{
+						losTiles = hasLos(client.getLocalPlayer().getWorldLocation(), WorldPoint.fromLocal(client, client.getSelectedSceneTile().getLocalLocation()));
+					}
                     else losTiles = hasLos(WorldPoint.fromLocal(client, client.getSelectedSceneTile().getLocalLocation()), client.getLocalPlayer().getWorldLocation());
 
 
@@ -70,10 +72,13 @@ public class LineOfSightOverlay extends Overlay {
 
                 if (config.interacting() && client.getLocalPlayer().getInteracting() != null) {
                     if (config.origin() == PLAYER)
-                    losTiles = hasLos(client.getLocalPlayer().getWorldLocation(), client.getLocalPlayer().getInteracting().getWorldLocation());
-                    else
-                        losTiles = hasLos(client.getLocalPlayer().getInteracting().getWorldLocation(), client.getLocalPlayer().getWorldLocation());
-
+					{
+						losTiles = hasLos(client.getLocalPlayer().getWorldLocation(), client.getLocalPlayer().getInteracting().getWorldLocation());
+					}
+					else
+					{
+						losTiles = hasLos(client.getLocalPlayer().getInteracting().getWorldLocation(), client.getLocalPlayer().getWorldLocation());
+					}
 
                     for (int x = 0; x < Constants.SCENE_SIZE; ++x) {
                         for (int y = 0; y < Constants.SCENE_SIZE; ++y) {
@@ -91,7 +96,7 @@ public class LineOfSightOverlay extends Overlay {
         return null;
     }
 
-    private void renderTileIfHasLineOfSight(Graphics2D graphics, WorldArea start, int targetX, int targetY, boolean drawDest)
+    private void renderTileIfHasLineOfSight(Graphics2D graphics, WorldArea start, int targetX, int targetY, boolean drawDest, boolean outOfRange)
     {
         WorldPoint targetLocation = new WorldPoint(targetX, targetY, start.getPlane());
 
@@ -111,28 +116,29 @@ public class LineOfSightOverlay extends Overlay {
                 return;
             }
 
-            OverlayUtil.renderPolygon(graphics, poly, Color.BLUE);
+			OverlayUtil.renderPolygon(graphics, poly, outOfRange ? Color.CYAN.darker() : Color.BLUE, new BasicStroke(1));
         }
     }
 
     private void renderLineOfSight(Graphics2D graphics)
     {
-        WorldArea area = client.getLocalPlayer().getWorldArea();
-        for (int x = area.getX() - 10; x <= area.getX() + 10; x++)
+        WorldArea playerLoc = client.getLocalPlayer().getWorldArea();
+        for (int x = playerLoc.getX() - 15; x <= playerLoc.getX() + 15; x++)
         {
-            for (int y = area.getY() - 10; y <= area.getY() + 10; y++)
+            for (int y = playerLoc.getY() - 15; y <= playerLoc.getY() + 15; y++)
             {
-                if (x == area.getX() && y == area.getY())
+                if (x == playerLoc.getX() && y == playerLoc.getY())
                 {
                     continue;
                 }
                 if (config.mode() == SIGHT) {
+					boolean outOfRange = Math.abs(playerLoc.getX() - x) > 10 || Math.abs(playerLoc.getY() - y) > 10;
                     if (config.origin() == PLAYER) {
-                        renderTileIfHasLineOfSight(graphics, area, x, y, true);
+                        renderTileIfHasLineOfSight(graphics, playerLoc, x, y, true, outOfRange);
                     }
                     else {
                         WorldArea origin = new WorldArea(x, y, 1, 1, client.getPlane());
-                        renderTileIfHasLineOfSight(graphics, origin, client.getLocalPlayer().getWorldLocation().getX(), client.getLocalPlayer().getWorldLocation().getY(), false);
+                        renderTileIfHasLineOfSight(graphics, origin, client.getLocalPlayer().getWorldLocation().getX(), client.getLocalPlayer().getWorldLocation().getY(), false, outOfRange);
                     }
                 }
                 else if (config.mode() == WALK){
@@ -169,7 +175,7 @@ public class LineOfSightOverlay extends Overlay {
 
         // could do this way more efficiently but cba for now
         if (!hasLos(start, targetLocation).containsValue(false))
-            OverlayUtil.renderPolygon(graphics, poly,BLUE);
+            OverlayUtil.renderPolygon(graphics, poly, BLUE, new BasicStroke(1));
     }
 
     public HashMap<WorldPoint, Boolean> hasLos(WorldPoint origin, WorldPoint destination)
@@ -210,6 +216,8 @@ public class LineOfSightOverlay extends Overlay {
             {
                 int[][] flags = client.getCollisionMaps()[client.getPlane()].getFlags();
                 int data = flags[localPoint.getSceneX()][localPoint.getSceneY()];
+
+				// TODO: refactor
 
                 Set<MovementFlag> movementFlags = MovementFlag.getSetFlags(data);
 
@@ -267,51 +275,26 @@ public class LineOfSightOverlay extends Overlay {
                         direction = y_inc > 0 ? Direction.NORTH : SOUTH;
                     }
 
-                    if (passable && direction != null && !movementFlags.isEmpty()) { // don't do this check if this tile is already blocked
+                    if (passable && direction != null && !movementFlags.isEmpty())
+					{ // don't do this check if this tile is already blocked
                         // visit(x,y)
                         // checking the next direction you head in isn't blocked
+						MovementFlag mf;
                         switch (direction) {
                             case NORTH:
-                                if (config.mode() == WALK) {
-                                    if (movementFlags.contains(MovementFlag.BLOCK_MOVEMENT_NORTH)) {
-                                        passable = false;
-                                    }
-                                }
-                                if (movementFlags.contains(MovementFlag.BLOCK_LINE_OF_SIGHT_NORTH)) {
-                                    passable = false;
-                                }
-                                break;
+								mf = config.mode() == WALK ? MovementFlag.BLOCK_MOVEMENT_NORTH : MovementFlag.BLOCK_LINE_OF_SIGHT_NORTH;
                             case SOUTH:
-                                if (config.mode() == WALK) {
-                                    if (movementFlags.contains(MovementFlag.BLOCK_MOVEMENT_SOUTH)) {
-                                        passable = false;
-                                    }
-                                }
-                                if (movementFlags.contains(MovementFlag.BLOCK_LINE_OF_SIGHT_SOUTH)) {
-                                    passable = false;
-                                }
+								mf = config.mode() == WALK ? MovementFlag.BLOCK_MOVEMENT_SOUTH : MovementFlag.BLOCK_LINE_OF_SIGHT_SOUTH;
                                 break;
                             case EAST:
-                                if (config.mode() == WALK) {
-                                    if (movementFlags.contains(MovementFlag.BLOCK_MOVEMENT_EAST)) {
-                                        passable = false;
-                                    }
-                                }
-                                if (movementFlags.contains(MovementFlag.BLOCK_LINE_OF_SIGHT_EAST)) {
-                                    passable = false;
-                                }
+								mf = config.mode() == WALK ? MovementFlag.BLOCK_MOVEMENT_EAST : MovementFlag.BLOCK_LINE_OF_SIGHT_EAST;
                                 break;
-                            case WEST:
-                                if (config.mode() == WALK) {
-                                    if (movementFlags.contains(MovementFlag.BLOCK_MOVEMENT_WEST)) {
-                                        passable = false;
-                                    }
-                                }
-                                if (movementFlags.contains(MovementFlag.BLOCK_LINE_OF_SIGHT_WEST)) {
-                                    passable = false;
-                                }
-                                break;
+                            default:
+								mf = config.mode() == WALK ? MovementFlag.BLOCK_MOVEMENT_WEST : MovementFlag.BLOCK_LINE_OF_SIGHT_WEST;
                         }
+						if (movementFlags.contains(mf)){
+							passable = false;
+						}
                     }
                 }
 
@@ -329,7 +312,7 @@ public class LineOfSightOverlay extends Overlay {
                 return;
             }
 
-            OverlayUtil.renderPolygon(graphics, poly, losTiles.get(tile.getWorldLocation()) ? GREEN : RED);
+            OverlayUtil.renderPolygon(graphics, poly, losTiles.get(tile.getWorldLocation()) ? GREEN : RED, new BasicStroke(1));
         }
     }
 

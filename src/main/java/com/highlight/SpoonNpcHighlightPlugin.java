@@ -29,7 +29,7 @@ import javax.inject.Inject;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.plugins.Plugin;
 
-@PluginDescriptor(name = "[S] Npc Highlight", description = "NPC highlight by Kourend/Boris", tags = { "SpoonNpcHighlight", "spoon" }, conflicts = { "NPC Indicators" })
+@PluginDescriptor(name = "Extended Npc Highlight", description = "NPC highlight by Kourend/Boris", conflicts = { "NPC Indicators" })
 
 @Slf4j
 public class SpoonNpcHighlightPlugin extends Plugin
