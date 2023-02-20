@@ -1,4 +1,4 @@
-package com.dmgtracker;
+package com.hitsplattracker;
 
 enum AttackStyle{
     ACCURATE,

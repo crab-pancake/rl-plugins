@@ -1,4 +1,4 @@
-package com.dmgtracker;
+package com.hitsplattracker;
 
 import com.google.inject.Provides;
 import lombok.extern.slf4j.Slf4j;
@@ -21,9 +21,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Objects;
 
-import static com.dmgtracker.AttackStyle.*;
+import static com.hitsplattracker.AttackStyle.*;
 import static net.runelite.client.ui.overlay.OverlayManager.OPTION_CONFIGURE;
-import static com.dmgtracker.HitsplatTrackerConfig.Target;
+import static com.hitsplattracker.HitsplatTrackerConfig.Target;
 
 @PluginDescriptor(
         name = "Hitsplat Tracker",

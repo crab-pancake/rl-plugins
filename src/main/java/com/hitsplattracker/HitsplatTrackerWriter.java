@@ -1,4 +1,4 @@
-package com.dmgtracker;
+package com.hitsplattracker;
 
 import lombok.extern.slf4j.Slf4j;
 

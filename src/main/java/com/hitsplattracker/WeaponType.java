@@ -1,10 +1,10 @@
-package com.dmgtracker;
+package com.hitsplattracker;
 
 import com.google.common.collect.ImmutableMap;
 
 import java.util.Map;
 
-import static com.dmgtracker.AttackStyle.*;
+import static com.hitsplattracker.AttackStyle.*;
 
 enum WeaponType
 {

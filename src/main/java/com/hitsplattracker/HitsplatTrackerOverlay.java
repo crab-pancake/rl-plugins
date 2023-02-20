@@ -1,4 +1,4 @@
-package com.dmgtracker;
+package com.hitsplattracker;
 
 import net.runelite.client.ui.overlay.OverlayPanel;
 import net.runelite.client.ui.overlay.OverlayPosition;
@@ -10,8 +10,8 @@ import javax.inject.Inject;
 import java.awt.*;
 import java.util.List;
 
-import static com.dmgtracker.AttackStyle.CASTING;
-import static com.dmgtracker.AttackStyle.DEFENSIVE_CASTING;
+import static com.hitsplattracker.AttackStyle.CASTING;
+import static com.hitsplattracker.AttackStyle.DEFENSIVE_CASTING;
 
 public class HitsplatTrackerOverlay extends OverlayPanel {
     private final HitsplatTrackerPlugin plugin;
