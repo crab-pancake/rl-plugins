@@ -1,10 +1,16 @@
 package com.nightmare;
 
 import com.google.inject.Provides;
+import java.util.ArrayList;
+import java.util.List;
 import javax.inject.Inject;
-
 import lombok.Getter;
-import net.runelite.api.*;
+import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.ChatMessageType;
+import net.runelite.api.Client;
+import net.runelite.api.GameState;
+import net.runelite.api.GraphicsObject;
+import net.runelite.api.VarPlayer;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GraphicsObjectCreated;
 import net.runelite.api.events.VarbitChanged;
@@ -15,14 +21,13 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
 
-import java.util.ArrayList;
-import java.util.List;
+@Slf4j
 
 @PluginDescriptor(
 	name = "Nightmare",
 	description = "meowdy"
 )
-public class NightmareBossPlugin extends Plugin
+public class NightmarePlugin extends Plugin
 {
 	@Inject
 	private Client client;
@@ -31,10 +36,10 @@ public class NightmareBossPlugin extends Plugin
 	private OverlayManager overlayManager;
 
 	@Inject
-	private NightmareBossConfig config;
+	private NightmareConfig config;
 
 	@Inject
-	private NightmareBossOverlay overlay;
+	private NightmareOverlay overlay;
 
 	@Inject
 	private ClientThread clientThread;
@@ -53,20 +58,13 @@ public class NightmareBossPlugin extends Plugin
 	{
 		overlayManager.add(overlay);
 		hands.clear();
-
-		clientThread.invokeLater(() ->
-		{
-			if (client.getGameState() == GameState.LOGGED_IN)
-			{
-				dreaming = isHealthbarActive();
-			}
-		});
 	}
 
 	@Override
 	protected void shutDown() throws Exception
 	{
 		overlayManager.remove(overlay);
+		hands.clear();
 	}
 
 	@Subscribe
@@ -83,10 +81,6 @@ public class NightmareBossPlugin extends Plugin
 				}
 				hands.add(graphicsObject);
 			}
-
-//			if (config.debug()) {
-//				client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", String.valueOf(graphicsObject.getLocation()), null);
-//			}
 		}
 	}
 
@@ -97,30 +91,23 @@ public class NightmareBossPlugin extends Plugin
 		if (gameState == GameState.LOADING)
 		{
 			hands.clear();
-			if (config.debug()) {
-				client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "Gamestate changed, cleared list of hands", null);
-			}
 		}
 	}
 
 	@Subscribe
 	public void onVarbitChanged(VarbitChanged event)
 	{
-		dreaming = isHealthbarActive();
+
+		if (event.getVarbitId() == VarPlayer.HP_HUD_NPC_ID.getId()){
+			return;
+		}
+		int npcId = event.getVarpId();
+		dreaming = (npcId >= 9416 && npcId <= 9424) || (npcId >= 11153 && npcId <= 11155);
 	}
 
 	@Provides
-	NightmareBossConfig provideConfig(ConfigManager configManager)
+	NightmareConfig provideConfig(ConfigManager configManager)
 	{
-		return configManager.getConfig(NightmareBossConfig.class);
-	}
-
-	private boolean isHealthbarActive()
-	{
-		if (config.debug()) {
-			return true;
-		}
-		int npcId = client.getVar(VarPlayer.HP_HUD_NPC_ID);
-		return (npcId >= 9416 && npcId <= 9424) || (npcId >= 11153 && npcId <= 11155);
+		return configManager.getConfig(NightmareConfig.class);
 	}
 }

@@ -5,7 +5,7 @@ import net.runelite.client.config.*;
 import java.awt.*;
 
 @ConfigGroup("example")
-public interface NightmareBossConfig extends Config
+public interface NightmareConfig extends Config
 {
 	@Alpha
 	@ConfigItem(

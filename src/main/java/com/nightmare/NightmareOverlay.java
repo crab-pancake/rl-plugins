@@ -33,16 +33,16 @@ import javax.inject.Inject;
 import java.awt.*;
 import java.util.List;
 
-class NightmareBossOverlay extends Overlay
+class NightmareOverlay extends Overlay
 {
 	private final Client client;
-	private final NightmareBossConfig config;
-	private final NightmareBossPlugin plugin;
+	private final NightmareConfig config;
+	private final NightmarePlugin plugin;
 	private final ModelOutlineRenderer modelOutlineRenderer;
 
 	@Inject
-	private NightmareBossOverlay(Client client, NightmareBossConfig config, NightmareBossPlugin plugin,
-		ModelOutlineRenderer modelOutlineRenderer)
+	private NightmareOverlay(Client client, NightmareConfig config, NightmarePlugin plugin,
+							 ModelOutlineRenderer modelOutlineRenderer)
 	{
 		this.client = client;
 		this.config = config;
