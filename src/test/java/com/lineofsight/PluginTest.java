@@ -1,4 +1,4 @@
-package com.highlight;
+package com.lineofsight;
 
 import com.mplayerindicators.MPlayerIndicatorsPlugin;
 import net.runelite.client.RuneLite;

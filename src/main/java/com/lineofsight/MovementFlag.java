@@ -1,4 +1,4 @@
-package com.LineOfSight;
+package com.lineofsight;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

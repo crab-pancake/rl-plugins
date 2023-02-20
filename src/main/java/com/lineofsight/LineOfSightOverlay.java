@@ -1,4 +1,4 @@
-package com.LineOfSight;
+package com.lineofsight;
 
 import net.runelite.api.*;
 import net.runelite.api.coords.Direction;
@@ -16,12 +16,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.LineOfSight.LineOfSightConfig.Origin.PLAYER;
+import static com.lineofsight.LineOfSightConfig.Origin.PLAYER;
 import static java.awt.Color.*;
 import static java.lang.Math.abs;
 import static java.lang.Math.sqrt;
 import static net.runelite.api.coords.Direction.*;
-import static com.LineOfSight.LineOfSightConfig.LineOfSightMode.*;
+import static com.lineofsight.LineOfSightConfig.LineOfSightMode.*;
 
 public class LineOfSightOverlay extends Overlay {
     private final Client client;

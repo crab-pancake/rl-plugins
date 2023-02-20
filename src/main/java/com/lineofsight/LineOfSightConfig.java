@@ -1,4 +1,4 @@
-package com.LineOfSight;
+package com.lineofsight;
 
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
