@@ -5,7 +5,7 @@ import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 
 @ConfigGroup("cluescrolljuggling")
-public interface ClueScrollJugginglingConfig extends Config
+public interface ClueScrollJugglingConfig extends Config
 {
 	@ConfigItem(
 		keyName = "notificationTime",
@@ -19,10 +19,21 @@ public interface ClueScrollJugginglingConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "showOnClue",
+		name = "Show Timer on Clue",
+		description = "Displays timer on the item",
+		position = 1
+	)
+	default boolean showOnClue()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "beginnerTimers",
 		name = "Beginner timer",
 		description = "Create timers for beginner clues on the ground.",
-		position = 1
+		position = 2
 	)
 	default boolean beginnerTimers()
 	{
@@ -33,7 +44,7 @@ public interface ClueScrollJugginglingConfig extends Config
 		keyName = "easyTimers",
 		name = "Easy timer",
 		description = "Create timers for easy clues on the ground.",
-		position = 2
+		position = 3
 	)
 	default boolean easyTimers()
 	{
@@ -44,7 +55,7 @@ public interface ClueScrollJugginglingConfig extends Config
 		keyName = "mediumTimers",
 		name = "Medium timer",
 		description = "Create timers for medium clues on the ground.",
-		position = 3
+		position = 4
 	)
 	default boolean mediumTimers()
 	{
@@ -55,7 +66,7 @@ public interface ClueScrollJugginglingConfig extends Config
 		keyName = "hardTimers",
 		name = "Hard timer",
 		description = "Create timers for hard clues on the ground.",
-		position = 4
+		position = 5
 	)
 	default boolean hardTimers()
 	{
@@ -66,7 +77,7 @@ public interface ClueScrollJugginglingConfig extends Config
 		keyName = "eliteTimers",
 		name = "Elite timer",
 		description = "Create timers for elite clues on the ground.",
-		position = 5
+		position = 6
 	)
 	default boolean eliteTimers()
 	{
@@ -77,7 +88,7 @@ public interface ClueScrollJugginglingConfig extends Config
 		keyName = "masterTimers",
 		name = "Master timer",
 		description = "Create timers for master clues on the ground.",
-		position = 6
+		position = 7
 	)
 	default boolean masterTimers()
 	{

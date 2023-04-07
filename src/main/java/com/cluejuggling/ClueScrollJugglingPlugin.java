@@ -18,6 +18,7 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
 import net.runelite.client.ui.overlay.infobox.Timer;
 
@@ -46,7 +47,7 @@ public class ClueScrollJugglingPlugin extends Plugin
 	ItemManager itemManager;
 
 	@Inject
-	private ClueScrollJugginglingConfig config;
+	private ClueScrollJugglingConfig config;
 
 	@Inject
 	private InfoBoxManager infoBoxManager;
@@ -58,16 +59,22 @@ public class ClueScrollJugglingPlugin extends Plugin
 	private ConfigManager configManager;
 
 	@Inject
+	private OverlayManager overlayManager;
+
+	@Inject
 	private Notifier notifier;
 
 	private GroundItemPluginStuff groundItemPluginStuff = new GroundItemPluginStuff(this);
+
+	@Inject
+	private ClueScrollJugglingOverlay overlay;
 
 	public Map<GroundItem.GroundItemKey, Timer> dropTimers = new HashMap<>();
 	private Set<GroundItem.GroundItemKey> alreadyNotified = new HashSet<>();
 
 	@Provides
-	public ClueScrollJugginglingConfig getConfig(ConfigManager configManager) {
-		return configManager.getConfig(ClueScrollJugginglingConfig.class);
+	public ClueScrollJugglingConfig getConfig(ConfigManager configManager) {
+		return configManager.getConfig(ClueScrollJugglingConfig.class);
 	}
 
 	@Subscribe
@@ -82,9 +89,9 @@ public class ClueScrollJugglingPlugin extends Plugin
 		GroundItem.GroundItemKey groundItemKey = new GroundItem.GroundItemKey(item.getId(), tile.getWorldLocation());
 
 		if (!dropTimers.containsKey(groundItemKey)) {
-			Instant instant = groundItemPluginStuff.calculateDespawnTime(groundItemPluginStuff.buildGroundItem(tile, item));
-			instant.compareTo(Instant.now());
-			Duration between = Duration.between(Instant.now(), instant);
+			Instant despawnTime = groundItemPluginStuff.calculateDespawnTime(groundItemPluginStuff.buildGroundItem(tile, item));
+//			instant.compareTo(Instant.now());
+			Duration between = Duration.between(Instant.now(), despawnTime);
 			Timer timer = new Timer(between.getSeconds(), ChronoUnit.SECONDS, itemManager.getImage(item.getId()), this) {
 				@Override
 				public Color getTextColor()
@@ -139,6 +146,7 @@ public class ClueScrollJugglingPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
+		overlayManager.add(overlay);
 		eventBus.register(groundItemPluginStuff);
 		groundItemPluginStuff.startUp();
 	}
@@ -146,6 +154,7 @@ public class ClueScrollJugglingPlugin extends Plugin
 	@Override
 	protected void shutDown()
 	{
+		overlayManager.remove(overlay);
 		eventBus.unregister(groundItemPluginStuff);
 	}
 
@@ -160,7 +169,7 @@ public class ClueScrollJugglingPlugin extends Plugin
 		MASTER(config -> config.masterTimers())
 		;
 
-		private final Predicate<ClueScrollJugginglingConfig> showTimer;
+		private final Predicate<ClueScrollJugglingConfig> showTimer;
 
 		public static ClueTier getClueTier(String clueName)
 		{
@@ -175,7 +184,7 @@ public class ClueScrollJugglingPlugin extends Plugin
 				;
 		}
 
-		public boolean showTimers(ClueScrollJugginglingConfig config)
+		public boolean showTimers(ClueScrollJugglingConfig config)
 		{
 			return showTimer.test(config);
 		}
