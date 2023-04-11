@@ -5,10 +5,13 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import javax.inject.Inject;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.Client;
 import static net.runelite.api.MenuAction.RUNELITE_OVERLAY;
 import net.runelite.client.ui.overlay.OverlayMenuEntry;
 import net.runelite.client.ui.overlay.OverlayPanel;
@@ -16,6 +19,7 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.OverlayPriority;
 import net.runelite.client.ui.overlay.components.ComponentOrientation;
 
+@Slf4j
 public class NotificationPanelOverlay extends OverlayPanel
 {
 	static final String CLEAR_ALL = "Clear";
@@ -30,11 +34,15 @@ public class NotificationPanelOverlay extends OverlayPanel
 	static boolean shouldUpdateBoxes;
 	static private Dimension preferredSize = DEFAULT_SIZE;
 	final private NotificationPanelConfig config;
+	private Client client;
+	private int lastDeletedTick = -1;
+	private Point lastDeletedPos = new Point(-50,-50);
 
 	@Inject
-	private NotificationPanelOverlay(NotificationPanelConfig config)
+	private NotificationPanelOverlay(NotificationPanelConfig config, Client client)
 	{
 		this.config = config;
+		this.client = client;
 
 		setResizable(true);
 		setPosition(OverlayPosition.TOP_LEFT);
@@ -46,6 +54,7 @@ public class NotificationPanelOverlay extends OverlayPanel
 		panelComponent.setOrientation(ComponentOrientation.VERTICAL);
 		panelComponent.setGap(new Point(0, GAP));
 		panelComponent.setBackgroundColor(TRANSPARENT);
+
 
 		getMenuEntries().add(new OverlayMenuEntry(RUNELITE_OVERLAY, CLEAR_ALL,
 			"Notification " + "panel"));
@@ -95,6 +104,43 @@ public class NotificationPanelOverlay extends OverlayPanel
 		}
 
 		return super.render(graphics);
+	}
+
+	@Override
+	public void onMouseOver(){
+		if (!config.dismissOnHover())
+		{
+			return;
+		}
+
+		// mouse pos relative to this overlay
+		Point mousePos = new Point(
+			(int) (client.getMouseCanvasPosition().getX() - this.getBounds().getX()),
+			(int) (client.getMouseCanvasPosition().getY() - this.getBounds().getY()));
+
+		if (mousePositionDifference(lastDeletedPos, mousePos) || lastDeletedTick < client.getTickCount() - 1){
+			Notification toRemove = null;
+
+			for (Notification notification : notificationQueue){
+				if (notification.getBox().getBounds().contains(mousePos)){
+					toRemove = notification;
+					lastDeletedTick = client.getTickCount();
+					lastDeletedPos = mousePos;
+					break;
+				}
+			}
+
+			if (toRemove != null){
+				// concurrent access error? does this happen often enough to do ClientThread.invokeLater or something
+				notificationQueue.remove(toRemove);
+				shouldUpdateBoxes = true;
+			}
+		}
+
+	}
+
+	boolean mousePositionDifference(Point a, Point b){
+		return Math.abs(a.getX() - b.getX()) + Math.abs(a.getY() - b.getY()) > 30;
 	}
 
 	void updatePanelSize()

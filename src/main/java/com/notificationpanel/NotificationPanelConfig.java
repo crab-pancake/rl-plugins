@@ -14,6 +14,15 @@ import static net.runelite.client.config.Units.PERCENT;
 public interface NotificationPanelConfig extends Config
 {
 
+	@ConfigItem(position = 0,
+		keyName = "dismissOnHover",
+		name = "Dismiss on hover",
+		description = "Dismiss notification when mouse hovers over it")
+	default boolean dismissOnHover()
+	{
+		return false;
+	}
+
 	@ConfigItem(position = 1,
 		keyName = "expireTime",
 		name = "Duration",
