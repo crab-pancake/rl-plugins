@@ -13,11 +13,14 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import static net.runelite.api.MenuAction.RUNELITE_OVERLAY;
+import net.runelite.client.config.RuneLiteConfig;
+import net.runelite.client.input.KeyManager;
 import net.runelite.client.ui.overlay.OverlayMenuEntry;
 import net.runelite.client.ui.overlay.OverlayPanel;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.OverlayPriority;
 import net.runelite.client.ui.overlay.components.ComponentOrientation;
+import net.runelite.client.util.HotkeyListener;
 
 @Slf4j
 public class NotificationPanelOverlay extends OverlayPanel
@@ -37,12 +40,17 @@ public class NotificationPanelOverlay extends OverlayPanel
 	private Client client;
 	private int lastDeletedTick = -1;
 	private Point lastDeletedPos = new Point(-50,-50);
+	final RuneLiteConfig runeLiteConfig;
+	private boolean inOverlayManagingMode = false;
 
 	@Inject
-	private NotificationPanelOverlay(NotificationPanelConfig config, Client client)
+	private NotificationPanelOverlay
+		(NotificationPanelConfig config, Client client, RuneLiteConfig runeLiteConfig,
+		 final KeyManager keyManager)
 	{
 		this.config = config;
 		this.client = client;
+		this.runeLiteConfig = runeLiteConfig;
 
 		setResizable(true);
 		setPosition(OverlayPosition.TOP_LEFT);
@@ -58,6 +66,26 @@ public class NotificationPanelOverlay extends OverlayPanel
 
 		getMenuEntries().add(new OverlayMenuEntry(RUNELITE_OVERLAY, CLEAR_ALL,
 			"Notification " + "panel"));
+
+		HotkeyListener hotkeyListener = new HotkeyListener(runeLiteConfig::dragHotkey)
+		{
+			@Override
+			public void hotkeyPressed()
+			{
+				inOverlayManagingMode = true;
+			}
+
+			@Override
+			public void hotkeyReleased()
+			{
+				if (inOverlayManagingMode)
+				{
+					inOverlayManagingMode = false;
+				}
+			}
+		};
+
+		keyManager.registerKeyListener(hotkeyListener);
 	}
 
 	@Override
@@ -108,7 +136,7 @@ public class NotificationPanelOverlay extends OverlayPanel
 
 	@Override
 	public void onMouseOver(){
-		if (!config.dismissOnHover())
+		if (!config.dismissOnHover() || inOverlayManagingMode)
 		{
 			return;
 		}
@@ -118,13 +146,13 @@ public class NotificationPanelOverlay extends OverlayPanel
 			(int) (client.getMouseCanvasPosition().getX() - this.getBounds().getX()),
 			(int) (client.getMouseCanvasPosition().getY() - this.getBounds().getY()));
 
-		if (mousePositionDifference(lastDeletedPos, mousePos) || lastDeletedTick < client.getTickCount() - 1){
+		if (mousePositionDifference(lastDeletedPos, mousePos) || lastDeletedTick < client.getGameCycle() - 20){
 			Notification toRemove = null;
 
 			for (Notification notification : notificationQueue){
 				if (notification.getBox().getBounds().contains(mousePos)){
 					toRemove = notification;
-					lastDeletedTick = client.getTickCount();
+					lastDeletedTick = client.getGameCycle();
 					lastDeletedPos = mousePos;
 					break;
 				}
@@ -140,7 +168,7 @@ public class NotificationPanelOverlay extends OverlayPanel
 	}
 
 	boolean mousePositionDifference(Point a, Point b){
-		return Math.abs(a.getX() - b.getX()) + Math.abs(a.getY() - b.getY()) > 30;
+		return Math.abs(a.getX() - b.getX()) + 2*Math.abs(a.getY() - b.getY()) > 80;
 	}
 
 	void updatePanelSize()

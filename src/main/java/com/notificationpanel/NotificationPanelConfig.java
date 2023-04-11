@@ -133,7 +133,7 @@ public interface NotificationPanelConfig extends Config
 	@AllArgsConstructor
 	enum TimeUnit
 	{
-		SECONDS("Seconds"), TICKS("Ticks");
+		SECONDS("Seconds"), TICKS("Ticks"), STARTTICK("Start Tick");
 		private final String value;
 
 		@Override

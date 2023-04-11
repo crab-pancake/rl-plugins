@@ -39,10 +39,13 @@ public class Notification
 	@Setter
 	private Timer timer;
 
-	Notification(final String message, Format format, NotificationPanelConfig config)
+	private int startTick = -1;
+
+	Notification(final String message, Format format, NotificationPanelConfig config, int startTick)
 	{
 		this.message = message;
 		this.format = format;
+		this.startTick = startTick;
 		// snapshot the time unit in case it changes
 		DurationOption.setTimeUnit(config.timeUnit());
 
@@ -226,6 +229,8 @@ public class Notification
 		int timeLeft = Math.abs(format.getDuration() - this.elapsed);
 		switch (DurationOption.getTimeUnit())
 		{
+			case STARTTICK:
+				return String.valueOf(startTick);
 			case TICKS:
 				return String.valueOf(Math.abs(timeLeft));
 			case SECONDS:

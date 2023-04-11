@@ -93,7 +93,7 @@ public class NotificationPanelPlugin extends Plugin
 			return;
 		}
 
-		final Notification notification = new Notification(message, format, config);
+		final Notification notification = new Notification(message, format, config, client.getTickCount());
 
 		NotificationPanelOverlay.notificationQueue.add(notification);
 		NotificationPanelOverlay.setShouldUpdateBoxes(true);
