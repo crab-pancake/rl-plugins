@@ -13,7 +13,9 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import static net.runelite.api.MenuAction.RUNELITE_OVERLAY;
+import net.runelite.api.events.FocusChanged;
 import net.runelite.client.config.RuneLiteConfig;
+import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.input.KeyManager;
 import net.runelite.client.ui.overlay.OverlayMenuEntry;
 import net.runelite.client.ui.overlay.OverlayPanel;
@@ -86,6 +88,15 @@ public class NotificationPanelOverlay extends OverlayPanel
 		};
 
 		keyManager.registerKeyListener(hotkeyListener);
+	}
+
+	@Subscribe
+	public void onFocusChanged(FocusChanged event)
+	{
+		if (!event.isFocused())
+		{
+			inOverlayManagingMode = false;
+		}
 	}
 
 	@Override
