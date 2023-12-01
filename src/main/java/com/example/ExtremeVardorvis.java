@@ -494,7 +494,6 @@ public class ExtremeVardorvis extends Plugin
 		axeSpawnedTicks = -1;
 	}
 
-	// TODO: REMEMBER TO REMOVE THIS
 	private void debugtest(){
 		if (client.getGameState() != GameState.LOGGED_IN)
 			return;
@@ -503,7 +502,7 @@ public class ExtremeVardorvis extends Plugin
 
 		spawnHead(style);
 	}
-	@Subscribe
+//	@Subscribe
 	private void onVarClientStrChanged(VarClientStrChanged e){
 		if (e.getIndex() != VarClientStr.CHATBOX_TYPED_TEXT)
 			return;
