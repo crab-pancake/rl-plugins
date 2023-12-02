@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.NPC;
@@ -17,6 +18,7 @@ import net.runelite.api.NpcID;
 import net.runelite.api.Projectile;
 import net.runelite.api.RuneLiteObject;
 import net.runelite.api.VarClientStr;
+import net.runelite.api.Varbits;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ActorDeath;
@@ -43,21 +45,29 @@ public class ExtremeVardorvis extends Plugin
 {
 	private static final int BOSS_ROOM_MAP_REGION = 4405;
 
+	private static final int MAGIC_PROJECTILE = 2520;
+	private static final int RANGE_PROJECTILE = 2521;
+
 	boolean inBossRoom;
 	boolean inFight;
 	int bossAttackTimer;
 	int nextPossibleOsu;
+	int bossHpPercentage;
 
+	private WorldPoint arenaSWCorner;
 	private final List<Integer> realAxes = new ArrayList<>();
 	private final List<RuneLiteObject> fakeTendrils = new ArrayList<>();
 	private final List<FakeAxe> fakeAxes = new ArrayList<>();
 
 	private boolean headSpawnedThisTick;
 	private boolean nextHeadIsMage;
+	private RuneLiteObject fakeSpike;
 
 	private int axeSpawnedTicks;
 
-	private WorldPoint arenaSWCorner;
+	private int missedPrayers;
+
+	private final List<PrayerCheck> prayerCheckQueue = new ArrayList<>();
 
 	@Inject
 	private Client client;
@@ -106,16 +116,16 @@ public class ExtremeVardorvis extends Plugin
 			// add location of this axe
 			realAxes.add(worldPointToTendrilNum(e.getNpc()));
 
-			while (nextPossibleOsu < 9){
-				nextPossibleOsu += 5;
-			}
+//			while (nextPossibleOsu < 9){
+//				nextPossibleOsu += 5;
+//			}
 		}
 
 		// head spawn: add to list of head projectiles (note prayer timing for mistake tracker)
 		else if (e.getNpc().getId() == NpcID.VARDORVIS_HEAD){
 			headSpawnedThisTick = true;
 			nextHeadIsMage = true;
-			// add tick and prayer to heads?
+			prayerCheckQueue.add(new PrayerCheck(client.getTickCount()+3, Varbits.PRAYER_PROTECT_FROM_MISSILES));
 		}
 	}
 
@@ -166,6 +176,8 @@ public class ExtremeVardorvis extends Plugin
 
 		if (((NPC) e.getActor()).getId() == NpcID.VARDORVIS){
 			inFight = false;
+			client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "Missed "+missedPrayers+" prayers that fight.","");
+			missedPrayers = 0;
 		}
 	}
 
@@ -180,15 +192,23 @@ public class ExtremeVardorvis extends Plugin
 		}
 
 		// attack animation
-		if (e.getActor().getAnimation() == 10340){
+		if (e.getActor().getAnimation() == 10340 ){
 			bossAttackTimer = 5;
+			prayerCheckQueue.add(new PrayerCheck(client.getTickCount(), Varbits.PRAYER_PROTECT_FROM_MELEE));
+
+			// TODO: only if boss wasn't just dashing?
+			if (config.spikyFloor())
+			{
+				clientThread.invoke(this::spawnSpike);
+			}
 		}
 
 		// captcha start
 		if (e.getActor().getAnimation() == 10342){
 			// clear all axes, heads, projectiles, tendrils
+			fakeSpike.setFinished(true);
+			fakeSpike = null;
 		}
-
 	}
 
 	@Subscribe
@@ -197,6 +217,29 @@ public class ExtremeVardorvis extends Plugin
 		{
 			return;
 		}
+
+		for (PrayerCheck prayer : prayerCheckQueue){
+			if (prayer.tick == client.getTickCount()){
+				if (client.getVarbitValue(prayer.prayerToCheck) != 1){
+					// missed prayer!
+					if (config.mistakeTracker())
+					{
+						client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "Missed prayer!", "");
+					}
+					missedPrayers++;
+				}
+				if (prayer.soundId != null)
+				{
+					client.playSoundEffect(prayer.soundId);
+				}
+				if (prayer.graphicId != null)
+				{
+					client.getLocalPlayer().createSpotAnim(99, prayer.graphicId, 80, 0);
+				}
+			}
+		}
+
+		prayerCheckQueue.removeIf(sound -> sound.tick <= client.getTickCount());
 
 		handleHeads();
 
@@ -214,42 +257,159 @@ public class ExtremeVardorvis extends Plugin
 				axeSpawnedTicks = -1;
 			}
 		});
+
+		if (client.getVarbitValue(Varbits.BOSS_HEALTH_MAXIMUM) > 0)
+		{
+			bossHpPercentage = client.getVarbitValue(Varbits.BOSS_HEALTH_CURRENT) * 100 / client.getVarbitValue(Varbits.BOSS_HEALTH_MAXIMUM);
+		}
+		else {
+			bossHpPercentage = 100;
+		}
 	}
 
 	@Subscribe
 	private void onClientTick(ClientTick e){
-		for (RuneLiteObject tendril : fakeTendrils){
-			if (Objects.requireNonNull(tendril.getAnimation()).getId() == 10364)
-			{
-				if (tendril.getAnimationFrame() == tendril.getAnimation().getNumFrames() - 1)
-				{
-					tendril.setAnimation(client.loadAnimation(10365));
+//		for (RuneLiteObject tendril : fakeTendrils){
+//			if (Objects.requireNonNull(tendril.getAnimation()).getId() == 10364)
+//			{
+//				if (tendril.getAnimationFrame() == tendril.getAnimation().getNumFrames() - 1)
+//				{
+//					tendril.setAnimation(client.loadAnimation(10365));
+//				}
+//			}
+//			else if (tendril.getAnimation().getId() == 10365)
+//			{
+//				if (tendril.getAnimationFrame() == tendril.getAnimation().getNumFrames() - 1)
+//				{
+//					tendril.setModel(client.loadModel(49302));
+//					tendril.setAnimation(client.loadAnimation(10336));
+//				}
+//			}
+//		}
+//		for (FakeAxe fakeAxe : fakeAxes){
+//			if (fakeAxe.axe.isActive()){
+//				LocalPoint newPos = new LocalPoint(fakeAxe.axe.getLocation().getX() + fakeAxe.stepX, fakeAxe.axe.getLocation().getY() + fakeAxe.stepY);
+//				fakeAxe.axe.setLocation(newPos, client.getPlane());
+//			}
+//		}
+
+		if (fakeSpike != null)
+		{
+			if (Objects.requireNonNull(fakeSpike.getAnimation()).getId() == 10165){
+				if (fakeSpike.getAnimationFrame() == fakeSpike.getAnimation().getNumFrames() - 1){
+					fakeSpike.setModel(client.loadModel(49294));
+					fakeSpike.setAnimation(client.loadAnimation(10356));
 				}
 			}
-			else if (tendril.getAnimation().getId() == 10365)
-			{
-				if (tendril.getAnimationFrame() == tendril.getAnimation().getNumFrames() - 1)
-				{
-					tendril.setModel(client.loadModel(49302));
-					tendril.setAnimation(client.loadAnimation(10336));
+			else if (Objects.requireNonNull(fakeSpike.getAnimation()).getId() == 10356){
+				if (fakeSpike.finished()){
+					fakeSpike = null;
 				}
 			}
 		}
-
-		for (FakeAxe fakeAxe : fakeAxes){
-			if (fakeAxe.axe.isActive()){
-				LocalPoint newPos = new LocalPoint(fakeAxe.axe.getLocation().getX() + fakeAxe.stepX, fakeAxe.axe.getLocation().getY() + fakeAxe.stepY);
-				fakeAxe.axe.setLocation(newPos, client.getPlane());
-			}
-		}
-
-		// head projectile might need to be spawned somewhere in here
 	}
 
 	private void checkInBossRoom(){
 		inBossRoom = (client.isInInstancedRegion() && Arrays.stream(client.getMapRegions()).anyMatch(i -> i == BOSS_ROOM_MAP_REGION));
 	}
 
+	private void spawnSpike(){
+		// create a fake object with graphic 2510, 2 ticks later change to 2512
+		//
+		RuneLiteObject spike = client.createRuneLiteObject();
+		spike.setModel(client.loadModel(46981));
+		spike.setAnimation(client.loadAnimation(10165));
+		spike.setLocation(LocalPoint.fromWorld(client, client.getLocalPlayer().getWorldLocation()), client.getPlane());
+		spike.setDrawFrontTilesFirst(false);
+
+		spike.setActive(true);
+		if (fakeSpike != null){
+			fakeSpike.setFinished(true);
+		}
+		fakeSpike = spike;
+	}
+
+	private void spawnHead(int projectileId){
+		// don't send message for the second head?
+		if (bossAttackTimer == 5)
+		{
+			client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "<col=ff289d>Vardorvis' head gazes upon you...</col>", "");
+		}
+
+		client.playSoundEffect(3539);
+
+		WorldPoint spawnPos = client.getLocalPlayer().getWorldLocation().dx(ThreadLocalRandom.current().nextInt(-3,4)).dy(ThreadLocalRandom.current().nextInt(-3,4));
+
+		RuneLiteObject head = client.createRuneLiteObject();
+
+		head.setModel(client.loadModel(49301));
+
+		head.setAnimation(client.loadAnimation(10348));
+		head.setLocation(LocalPoint.fromWorld(client,spawnPos), client.getPlane());
+
+		int angle = (int) (Math.atan2(spawnPos.getX() - client.getLocalPlayer().getWorldLocation().getX(), spawnPos.getY() - client.getLocalPlayer().getWorldLocation().getY()) * 1024 / Math.PI);
+		while (angle < 0){
+			angle += 2048;
+		}
+		head.setOrientation(angle);
+
+		head.setActive(true);
+
+		createHeadProjectile(client, projectileId, head);
+
+		int prayerToCheck = nextHeadIsMage ? Varbits.PRAYER_PROTECT_FROM_MAGIC : Varbits.PRAYER_PROTECT_FROM_MISSILES;
+		int spotAnim = nextHeadIsMage ? 2551 : 2552;
+
+		prayerCheckQueue.add(new PrayerCheck(client.getTickCount() + 3, prayerToCheck, 4015, spotAnim));
+	}
+
+	private void handleHeads(){
+		if (!config.moreHeads() || headSpawnedThisTick || bossAttackTimer == 3)
+			return;
+
+		switch (bossAttackTimer){
+			// TODO: do something better than nextHeadIsMage because this kind of sucks.
+			case 5:
+				nextHeadIsMage = ThreadLocalRandom.current().nextBoolean();
+				spawnHead(nextHeadIsMage ? MAGIC_PROJECTILE : RANGE_PROJECTILE);
+
+				nextHeadIsMage = !nextHeadIsMage; // chaos heads: ThreadLocalRandom.current().nextBoolean()
+				break;
+			case 4:
+				if (bossHpPercentage > 75) return;
+				spawnHead(nextHeadIsMage ? MAGIC_PROJECTILE : RANGE_PROJECTILE);
+			default:
+		}
+	}
+
+	private void handleAxes(){
+		switch (axeSpawnedTicks){
+			case 0:
+				spawnTendrils();
+				break;
+			case 1:
+			case 2:
+				break;
+			case 3:
+				for (FakeAxe i : fakeAxes){
+					i.axe.setActive(true);
+				}
+//				break;
+				// TODO: when tendrils finish, do they get cleared from the list? most likely not
+			case 4:
+
+			case 5:
+			case 6:
+			case 7:
+				updateAxeMoveTarget();
+				break;
+			default:
+				for (FakeAxe i : fakeAxes){
+					i.axe.setActive(false);
+				}
+				fakeAxes.clear();
+		}
+	}
 	private void spawnTendrils(){
 		fakeTendrils.clear();
 		fakeAxes.clear();
@@ -304,7 +464,6 @@ public class ExtremeVardorvis extends Plugin
 			fakeAxes.add(fakeAxe);
 		}
 	}
-
 	private void updateAxeMoveTarget(){
 		for (FakeAxe i : fakeAxes){
 			i.nextPoint = i.path.get(axeSpawnedTicks - 3);
@@ -315,89 +474,6 @@ public class ExtremeVardorvis extends Plugin
 			i.stepY = (target.getY() - i.axe.getLocation().getY()) / 30;
 		}
 	}
-
-	private void spawnSpike(){
-
-	}
-
-	private void spawnHead(int projectileId){
-		client.playSoundEffect(3539);
-
-		WorldPoint spawnPos = client.getLocalPlayer().getWorldLocation().dx(ThreadLocalRandom.current().nextInt(-3,4)).dy(ThreadLocalRandom.current().nextInt(-3,4));
-
-		RuneLiteObject head = client.createRuneLiteObject();
-
-		head.setModel(client.loadModel(49301));
-
-		head.setAnimation(client.loadAnimation(10348));
-		head.setLocation(LocalPoint.fromWorld(client,spawnPos), client.getPlane());
-
-		int angle = (int) (Math.atan2(spawnPos.getX() - client.getLocalPlayer().getWorldLocation().getX(), spawnPos.getY() - client.getLocalPlayer().getWorldLocation().getY()) * 1024 / Math.PI);
-		while (angle < 0){
-			angle += 2048;
-		}
-		head.setOrientation(angle);
-
-		head.setActive(true);
-
-		clientThread.invokeLater(() -> {
-			createHeadProjectile(client, projectileId, head);
-		});
-	}
-
-	private void handleAxes(){
-		switch (axeSpawnedTicks){
-			case 0:
-				spawnTendrils();
-				break;
-			case 1:
-			case 2:
-				break;
-			case 3:
-				for (FakeAxe i : fakeAxes){
-					i.axe.setActive(true);
-				}
-//				break;
-				// TODO: when tendrils finish, do they get cleared from the list? most likely not
-			case 4:
-
-			case 5:
-			case 6:
-			case 7:
-				updateAxeMoveTarget();
-				break;
-			default:
-				for (FakeAxe i : fakeAxes){
-					i.axe.setActive(false);
-				}
-				fakeAxes.clear();
-		}
-	}
-
-	private void handleHeads(){
-		if (headSpawnedThisTick || bossAttackTimer == 3)
-			return;
-
-		if (bossAttackTimer == 5){ // head didn't spawn: i can spawn one
-			boolean mage = ThreadLocalRandom.current().nextBoolean();
-			spawnHead(mage ? config.style().getMagic() : config.style().getRange());
-			// TODO: chaos heads: make below another threadlocalrandom
-			nextHeadIsMage = !mage;
-		}
-		else if (bossAttackTimer == 4)
-		{
-			if (nextHeadIsMage)
-			{
-				spawnHead(config.style().getMagic());
-			}
-			else
-			{
-				spawnHead(config.style().getRange());
-			}
-		}
-	}
-
-
 	private int worldPointToTendrilNum(NPC tendril){
 		// 5 6 7
 		// 3   4
@@ -492,15 +568,14 @@ public class ExtremeVardorvis extends Plugin
 		nextPossibleOsu = -1;
 		headSpawnedThisTick = false;
 		axeSpawnedTicks = -1;
+		missedPrayers = 0;
 	}
 
 	private void debugtest(){
 		if (client.getGameState() != GameState.LOGGED_IN)
 			return;
 
-		int style = ThreadLocalRandom.current().nextBoolean() ? config.style().getMagic() : config.style().getRange();
-
-		spawnHead(style);
+		clientThread.invokeLater(this::spawnSpike);
 	}
 //	@Subscribe
 	private void onVarClientStrChanged(VarClientStrChanged e){

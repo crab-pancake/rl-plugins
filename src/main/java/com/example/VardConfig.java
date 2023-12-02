@@ -12,64 +12,68 @@ public interface VardConfig extends Config
 	@ConfigItem(
 		keyName = "moreAxes",
 		name = "More Axes",
-		description = "Spawns more axes (+10 invo)"
+		description = "Spawns more axes (+10 invo)",
+		hidden = true
 	)
 	default boolean moreAxes()
 	{
-		return true;
+		return false;
 	}
 
 	@ConfigItem(
 		keyName = "funkyAxes",
 		name = "Funky Axes",
-		description = "Spawns axes in funky directions (+15 invo)"
+		description = "Spawns axes in funky directions (+15 invo)",
+		hidden = true
 	)
 	default boolean funkyAxes()
 	{
-		return true;
+		return false;
 	}
 
 	@ConfigItem(
 		keyName = "moreHeads",
 		name = "More Heads",
-		description = "Spawns more heads (+10 invo)"
+		description = "Spawns more heads (+10 invo)",
+		hidden = true
 	)
 	default boolean moreHeads()
 	{
-		return true;
+		return false;
 	}
 
 	@ConfigItem(
 		keyName = "hydraHeads",
 		name = "Hydra Heads",
-		description = "Spawns all the heads. Also adds cHaOs (+30 invo)"
+		description = "Spawns all the heads. Also adds cHaOs (requires more heads)",
+		hidden = true
 	)
 	default boolean hydraHeads()
 	{
-		return true;
+		return false;
 	}
 
 	@ConfigItem(
-		keyName = "style",
-		name = "Projectile Style",
-		description = "Style of Vardorvis head projectile"
+		keyName = "spikyFloor",
+		name = "Spiky Floor",
+		description = "Boss spawns spikes under you",
+		hidden = true
 	)
-	default Style style()
+	default boolean spikyFloor()
 	{
-		return Style.CoX;
+		return false;
 	}
 
-	@Getter
-	@AllArgsConstructor
-	enum Style
+	@ConfigItem(
+		keyName = "mistakeTracker",
+		name = "Mistake Tracker",
+		description = "Adds chat messages when you make mistakes",
+		hidden = true
+	)
+	default boolean mistakeTracker()
 	{
-		Inferno(1378, 1380),
-		CoX(1343, 1341),
-		ToB(1607, 1606),
-		ToA(2241, 2224),
-		Default(2521,2520);
-
-		private final int range;
-		private final int magic;
+		return false;
 	}
+
+
 }
