@@ -55,8 +55,7 @@ public interface VardConfig extends Config
 	@ConfigItem(
 		keyName = "spikyFloor",
 		name = "Spiky Floor",
-		description = "Boss spawns spikes under you",
-		hidden = true
+		description = "Boss spawns spikes under you"
 	)
 	default boolean spikyFloor()
 	{
@@ -66,13 +65,10 @@ public interface VardConfig extends Config
 	@ConfigItem(
 		keyName = "mistakeTracker",
 		name = "Mistake Tracker",
-		description = "Adds chat messages when you make mistakes",
-		hidden = true
+		description = "Adds chat messages when you make mistakes"
 	)
 	default boolean mistakeTracker()
 	{
 		return false;
 	}
-
-
 }
