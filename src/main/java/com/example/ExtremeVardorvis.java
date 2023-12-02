@@ -618,7 +618,7 @@ public class ExtremeVardorvis extends Plugin
 
 		clientThread.invokeLater(this::spawnSpike);
 	}
-	@Subscribe
+//	@Subscribe
 	private void onVarClientStrChanged(VarClientStrChanged e){
 		if (e.getIndex() != VarClientStr.CHATBOX_TYPED_TEXT)
 			return;
