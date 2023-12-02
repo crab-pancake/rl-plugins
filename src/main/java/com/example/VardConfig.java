@@ -34,8 +34,7 @@ public interface VardConfig extends Config
 	@ConfigItem(
 		keyName = "moreHeads",
 		name = "More Heads",
-		description = "Spawns more heads (+10 invo)",
-		hidden = true
+		description = "Spawns more heads"
 	)
 	default boolean moreHeads()
 	{

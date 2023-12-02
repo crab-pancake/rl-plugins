@@ -17,6 +17,7 @@ import net.runelite.api.NPC;
 import net.runelite.api.NpcID;
 import net.runelite.api.Projectile;
 import net.runelite.api.RuneLiteObject;
+import net.runelite.api.Scene;
 import net.runelite.api.VarClientStr;
 import net.runelite.api.Varbits;
 import net.runelite.api.coords.LocalPoint;
@@ -302,6 +303,13 @@ public class ExtremeVardorvis extends Plugin
 				}
 			}
 			else if (Objects.requireNonNull(fakeSpike.getAnimation()).getId() == 10356){
+				if (fakeSpike.getAnimationFrame() == 2){
+					client.playSoundEffect(7154, fakeSpike.getLocation().getSceneX(), fakeSpike.getLocation().getSceneY(), 10);
+				}
+				else if (fakeSpike.getAnimationFrame() == 40){
+					client.playSoundEffect(7109, fakeSpike.getLocation().getSceneX(), fakeSpike.getLocation().getSceneY(), 10);
+				}
+
 				if (fakeSpike.finished()){
 					fakeSpike = null;
 				}
@@ -314,12 +322,13 @@ public class ExtremeVardorvis extends Plugin
 	}
 
 	private void spawnSpike(){
-		// create a fake object with graphic 2510, 2 ticks later change to 2512
-		//
 		RuneLiteObject spike = client.createRuneLiteObject();
 		spike.setModel(client.loadModel(46981));
 		spike.setAnimation(client.loadAnimation(10165));
-		spike.setLocation(LocalPoint.fromWorld(client, client.getLocalPlayer().getWorldLocation()), client.getPlane());
+
+		LocalPoint modifiedLocation = modifyLp(LocalPoint.fromWorld(client, client.getLocalPlayer().getWorldLocation()));
+
+		spike.setLocation(modifiedLocation, client.getPlane());
 		spike.setDrawFrontTilesFirst(false);
 
 		spike.setActive(true);
@@ -414,7 +423,7 @@ public class ExtremeVardorvis extends Plugin
 		fakeTendrils.clear();
 		fakeAxes.clear();
 
-		// TODO: eventually change 7 to 15 when i add horizontal axes
+		// in future: eventually change 7 to 15 if i add horizontal axes
 		List<Integer> possibleAxeSpawns = IntStream.range(0, 8).boxed().collect(Collectors.toList());
 
 		possibleAxeSpawns.removeAll(realAxes);
@@ -509,11 +518,11 @@ public class ExtremeVardorvis extends Plugin
 		else if (i < 8){
 			return arenaSWCorner.dy(10).dx(5*(i-5));
 		}
-		// TODO: add funky axe spots
+		// in future: add funky axe spots
 		else return null;
 	}
 	private int tendrilNumToOrientation(int i){
-		// TODO: add straight axes
+		// in future: add straight axes
 		switch (i){
 			case 7:
 				return 256;
@@ -561,6 +570,38 @@ public class ExtremeVardorvis extends Plugin
 			.addLast(proj);
 	}
 
+	private LocalPoint modifyLp(LocalPoint lp){
+		int cameraAngle = client.getCameraYaw();
+		if (cameraAngle < 2048 /16){
+			return new LocalPoint(lp.getX(), lp.getY() + 1);
+		}
+		else if (cameraAngle < 2048 * 3/16){
+			return new LocalPoint(lp.getX() + 1, lp.getY() + 1);
+		}
+		else if (cameraAngle < 2048 * 5/16){
+			return new LocalPoint(lp.getX() + 1, lp.getY());
+		}
+		else if (cameraAngle < 2048 * 7/16){
+			return new LocalPoint(lp.getX() + 1, lp.getY() - 1);
+		}
+		else if (cameraAngle < 2048 * 9/16){
+			return new LocalPoint(lp.getX(), lp.getY() - 1);
+		}
+		else if (cameraAngle < 2048 * 11/16){
+			return new LocalPoint(lp.getX() - 1, lp.getY() - 1);
+		}
+		else if (cameraAngle < 2048 * 13/16){
+			return new LocalPoint(lp.getX() - 1, lp.getY());
+		}
+		else if (cameraAngle < 2048 * 15/16){
+			return new LocalPoint(lp.getX() - 1, lp.getY() + 1);
+		}
+		else
+		{
+			return new LocalPoint(lp.getX(), lp.getY() + 1);
+		}
+	}
+
 	private void reset(){
 		arenaSWCorner = null;
 		inFight = false;
@@ -577,7 +618,7 @@ public class ExtremeVardorvis extends Plugin
 
 		clientThread.invokeLater(this::spawnSpike);
 	}
-//	@Subscribe
+	@Subscribe
 	private void onVarClientStrChanged(VarClientStrChanged e){
 		if (e.getIndex() != VarClientStr.CHATBOX_TYPED_TEXT)
 			return;
