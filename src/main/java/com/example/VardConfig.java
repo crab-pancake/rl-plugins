@@ -12,7 +12,7 @@ public interface VardConfig extends Config
 	@ConfigItem(
 		keyName = "moreAxes",
 		name = "More Axes",
-		description = "Spawns more axes (+10 invo)",
+		description = "Spawns more axes",
 		hidden = true
 	)
 	default boolean moreAxes()
@@ -23,7 +23,7 @@ public interface VardConfig extends Config
 	@ConfigItem(
 		keyName = "funkyAxes",
 		name = "Funky Axes",
-		description = "Spawns axes in funky directions (+15 invo)",
+		description = "Spawns axes in funky directions",
 		hidden = true
 	)
 	default boolean funkyAxes()
@@ -44,8 +44,7 @@ public interface VardConfig extends Config
 	@ConfigItem(
 		keyName = "hydraHeads",
 		name = "Hydra Heads",
-		description = "Spawns all the heads. Also adds cHaOs (requires more heads)",
-		hidden = true
+		description = "Spawns all the heads. Also adds cHaOs (requires more heads)"
 	)
 	default boolean hydraHeads()
 	{

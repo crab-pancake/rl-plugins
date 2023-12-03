@@ -17,6 +17,7 @@ import net.runelite.api.Projectile;
 import net.runelite.api.RuneLiteObject;
 import net.runelite.api.Varbits;
 import net.runelite.api.coords.LocalPoint;
+import net.runelite.api.coords.WorldArea;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ActorDeath;
 import net.runelite.api.events.AnimationChanged;
@@ -45,7 +46,7 @@ public class ExtremeVardorvis extends Plugin
 
 	boolean inBossRoom;
 	boolean inFight;
-	int bossAttackTimer;
+	short bossAttackTimer;
 	int nextPossibleOsu;
 	int bossHpPercentage;
 	boolean bossWasDashing;
@@ -59,12 +60,18 @@ public class ExtremeVardorvis extends Plugin
 	private boolean forceMageHead;
 	private RuneLiteObject fakeSpike;
 
-	private int axeSpawnedTicks;
+	private short axeAliveTicks;
 
-	private int missedPrayers;
+	private short missedPrayers;
 	private WorldPoint playerPositionLastTick;
 
 	private final List<PrayerCheck> prayerCheckQueue = new ArrayList<>();
+
+	private int highestAxeHp;
+	private int highestHeadHp;
+	private int highestCaptchaHp;
+	private short lowestHitsBetweenCaptchas;
+	private short currentHitsBetweenCaptchas;
 
 	@Inject
 	private Client client;
@@ -77,12 +84,20 @@ public class ExtremeVardorvis extends Plugin
 	@Override
 	protected void startUp()
 	{
+		highestHeadHp = 0;
+		highestAxeHp = 0;
+		highestCaptchaHp = 0;
+		lowestHitsBetweenCaptchas = Short.MAX_VALUE;
 		reset();
 	}
 
 	@Override
 	protected void shutDown()
 	{
+		log.info("Highest axe spawn hp: "+highestAxeHp);
+		log.info("Highest head spawn hp: "+highestHeadHp);
+		log.info("Highest captcha hp: "+highestCaptchaHp);
+		log.info("Lowest hits between captchas: "+ lowestHitsBetweenCaptchas);
 		reset();
 	}
 
@@ -107,21 +122,27 @@ public class ExtremeVardorvis extends Plugin
 		}
 
 		// tendril spawn: add to list of axes. change next possible captcha time
-//		if (e.getNpc().getId() == NpcID.LARGE_TENDRIL){
-//			axeSpawnedTicks = 0;
-//
-//			// add location of this axe
-////			realAxes.add(worldPointToTendrilNum(e.getNpc()));
-//
-////			while (nextPossibleOsu < 9){
-////				nextPossibleOsu += 5;
-////			}
-//		}
+		if (e.getNpc().getId() == NpcID.LARGE_TENDRIL){
+			axeAliveTicks = 8;
+
+			if (client.getVarbitValue(Varbits.BOSS_HEALTH_CURRENT) > highestAxeHp){
+				highestAxeHp = client.getVarbitValue(Varbits.BOSS_HEALTH_CURRENT);
+			}
+
+			// add location of this axe
+//			realAxes.add(worldPointToTendrilNum(e.getNpc()));
+		}
 
 		// head spawn: add to list of head projectiles (note prayer timing for mistake tracker)
 		if (e.getNpc().getId() == NpcID.VARDORVIS_HEAD){
 			headSpawnedThisTick = true;
+
+			if (client.getVarbitValue(Varbits.BOSS_HEALTH_CURRENT) > highestHeadHp){
+				highestHeadHp = client.getVarbitValue(Varbits.BOSS_HEALTH_CURRENT);
+			}
+
 			forceMageHead = true;
+
 			prayerCheckQueue.add(new PrayerCheck(client.getTickCount()+3, Varbits.PRAYER_PROTECT_FROM_MISSILES));
 		}
 	}
@@ -201,14 +222,30 @@ public class ExtremeVardorvis extends Plugin
 			{
 				clientThread.invoke(this::spawnSpike);
 			}
+
+			if (currentHitsBetweenCaptchas != -1){
+				currentHitsBetweenCaptchas++;
+			}
 		}
 
 		// captcha start
 		if (e.getActor().getAnimation() == 10342){
+			if (client.getVarbitValue(Varbits.BOSS_HEALTH_CURRENT) > highestCaptchaHp){
+				highestCaptchaHp = client.getVarbitValue(Varbits.BOSS_HEALTH_CURRENT);
+			}
+
+			bossAttackTimer = 10;
+			prayerCheckQueue.add(new PrayerCheck(client.getTickCount(), Varbits.PRAYER_PROTECT_FROM_MELEE));
+
 			// clear all axes, heads, projectiles, tendrils
 			fakeSpike.setFinished(true);
 			fakeSpike = null;
 
+			if (currentHitsBetweenCaptchas != -1 && currentHitsBetweenCaptchas < lowestHitsBetweenCaptchas){
+				lowestHitsBetweenCaptchas = currentHitsBetweenCaptchas;
+			}
+
+			currentHitsBetweenCaptchas = 0;
 		}
 
 		bossWasDashing = false;
@@ -227,7 +264,14 @@ public class ExtremeVardorvis extends Plugin
 					// missed prayer!
 					if (config.mistakeTracker())
 					{
-						client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "You've been injured and can't use protection prayers!", "");
+						if (prayer.prayerToCheck == Varbits.PRAYER_PROTECT_FROM_MELEE)
+						{
+							client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "You got meleed!", "");
+						}
+						else
+						{
+							client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "You've been injured and can't use protection prayers!", "");
+						}
 					}
 					missedPrayers++;
 				}
@@ -252,13 +296,9 @@ public class ExtremeVardorvis extends Plugin
 		clientThread.invokeAtTickEnd(() -> {
 			bossAttackTimer--;
 			headSpawnedThisTick = false;
-			if (axeSpawnedTicks >= 0)
+			if (axeAliveTicks >= 0)
 			{
-				axeSpawnedTicks++;
-			}
-			if (axeSpawnedTicks > 7)
-			{
-				axeSpawnedTicks = -1;
+				axeAliveTicks--;
 			}
 			playerPositionLastTick = client.getLocalPlayer().getWorldLocation();
 
@@ -369,14 +409,25 @@ public class ExtremeVardorvis extends Plugin
 					boolean whichProjectile = ThreadLocalRandom.current().nextBoolean();
 					spawnHead(whichProjectile ? MAGIC_PROJECTILE : RANGE_PROJECTILE);
 
-					forceMageHead = !whichProjectile; // chaos heads: ThreadLocalRandom.current().nextBoolean()
+					forceMageHead = !whichProjectile;
 				}
 				return;
 			case 4:
-				if (bossHpPercentage > 50)
+				// sometimes this doesn't happen??
+				if (bossHpPercentage > 60)
 					return;
+
+				if (config.hydraHeads()){
+					forceMageHead = ThreadLocalRandom.current().nextBoolean();
+				}
+
 				spawnHead(forceMageHead ? MAGIC_PROJECTILE : RANGE_PROJECTILE);
-			default:
+			case 1:
+				// TODO: update this condition when i have more info about minimum captcha attacks
+				if (!config.hydraHeads() || bossHpPercentage > 40 || axeAliveTicks < 2 || currentHitsBetweenCaptchas > 4)
+					return;
+
+				spawnHead(ThreadLocalRandom.current().nextBoolean() ? MAGIC_PROJECTILE : RANGE_PROJECTILE);
 		}
 	}
 
@@ -396,6 +447,8 @@ public class ExtremeVardorvis extends Plugin
 				WorldPoint spikeLocation = WorldPoint.fromLocal(client, fakeSpike.getLocation());
 				if (client.getLocalPlayer().getWorldLocation().getX() == spikeLocation.getX() && client.getLocalPlayer().getWorldLocation().getY() == spikeLocation.getY()){
 					client.addChatMessage(ChatMessageType.GAMEMESSAGE,"","Stepped on a spike! Ow!","");
+					client.getLocalPlayer().setOverheadText("Ow spiky!");
+					client.getLocalPlayer().setOverheadCycle(50);
 				}
 			}
 			else if (fakeSpike.getAnimationFrame() == 40){
@@ -625,8 +678,10 @@ public class ExtremeVardorvis extends Plugin
 		bossAttackTimer = -1;
 		nextPossibleOsu = -1;
 		headSpawnedThisTick = false;
-		axeSpawnedTicks = -1;
+		axeAliveTicks = -1;
 		missedPrayers = 0;
+		prayerCheckQueue.clear();
+		currentHitsBetweenCaptchas = -1;
 	}
 
 //	private void moveAxes(){
