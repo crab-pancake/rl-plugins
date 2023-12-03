@@ -32,9 +32,21 @@ public interface VardConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "mistakeTracker",
+		name = "Mistake Tracker",
+		description = "Adds chat messages when you make mistakes",
+		position = 0
+	)
+	default boolean mistakeTracker()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = "moreHeads",
 		name = "More Heads",
-		description = "Spawns more heads"
+		description = "Spawns more heads",
+		position = 1
 	)
 	default boolean moreHeads()
 	{
@@ -44,7 +56,8 @@ public interface VardConfig extends Config
 	@ConfigItem(
 		keyName = "hydraHeads",
 		name = "Hydra Heads",
-		description = "Spawns all the heads. Also adds cHaOs (requires more heads)"
+		description = "Spawns all the heads. Also adds cHaOs (requires More Heads)",
+		position = 2
 	)
 	default boolean hydraHeads()
 	{
@@ -54,19 +67,10 @@ public interface VardConfig extends Config
 	@ConfigItem(
 		keyName = "spikyFloor",
 		name = "Spiky Floor",
-		description = "Boss spawns spikes under you"
+		description = "Boss spawns spikes under you",
+		position = 3
 	)
 	default boolean spikyFloor()
-	{
-		return false;
-	}
-
-	@ConfigItem(
-		keyName = "mistakeTracker",
-		name = "Mistake Tracker",
-		description = "Adds chat messages when you make mistakes"
-	)
-	default boolean mistakeTracker()
 	{
 		return false;
 	}
