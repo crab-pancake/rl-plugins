@@ -53,6 +53,7 @@ public class ExtremeVardorvis extends Plugin
 	short missedPrayers;
 	short spikesTaken;
 	int lastCaptchaTick;
+	short melees;
 
 	private WorldPoint arenaSWCorner;
 //	private final List<Integer> realAxes = new ArrayList<>();
@@ -202,10 +203,12 @@ public class ExtremeVardorvis extends Plugin
 		if (e.getActor() instanceof NPC && ((NPC) e.getActor()).getId() == NpcID.VARDORVIS){
 			inFight = false;
 			client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "Missed "+missedPrayers+" prayers that fight.","");
+			client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "Got meleed "+melees+" times.","");
 			if (config.spikyFloor())
 			{
 				client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "Stepped on " + spikesTaken + " spikes.", "");
 			}
+			melees = 0;
 			missedPrayers = 0;
 			spikesTaken = 0;
 		}
@@ -243,7 +246,10 @@ public class ExtremeVardorvis extends Plugin
 				highestCaptchaHp = client.getVarbitValue(Varbits.BOSS_HEALTH_CURRENT);
 			}
 
-			bossAttackTimer = 10;
+			if (config.hydraHeads())
+			{
+				bossAttackTimer = 10;
+			}
 			prayerCheckQueue.add(new PrayerCheck(client.getTickCount(), Varbits.PRAYER_PROTECT_FROM_MELEE));
 
 			// clear all axes, heads, projectiles, tendrils
@@ -272,20 +278,26 @@ public class ExtremeVardorvis extends Plugin
 			if (prayer.tick == client.getTickCount()){
 				if (client.getVarbitValue(prayer.prayerToCheck) != 1){
 					// missed prayer!
-					if (config.mistakeTracker())
+					if (prayer.prayerToCheck == Varbits.PRAYER_PROTECT_FROM_MELEE)
 					{
-						if (prayer.prayerToCheck == Varbits.PRAYER_PROTECT_FROM_MELEE)
+						if (config.mistakeTracker())
 						{
-							client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "You got meleed!", "");
+							client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "Vardorvis punches you in the dome!", "");
+							client.getLocalPlayer().setOverheadText("Ow I got punched!");
+							client.getLocalPlayer().setOverheadCycle(50);
 						}
-						else
+						melees++;
+					}
+					else
+					{
+						if (config.mistakeTracker())
 						{
 							client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "You've been injured and can't use protection prayers!", "");
+							client.getLocalPlayer().setOverheadText("Ow my prayer!");
+							client.getLocalPlayer().setOverheadCycle(50);
 						}
-						client.getLocalPlayer().setOverheadText("Ow my prayer!");
-						client.getLocalPlayer().setOverheadCycle(50);
+						missedPrayers++;
 					}
-					missedPrayers++;
 				}
 				if (prayer.soundId != null)
 				{
@@ -299,8 +311,6 @@ public class ExtremeVardorvis extends Plugin
 		}
 		prayerCheckQueue.removeIf(sound -> sound.tick <= client.getTickCount());
 
-//		fakeHeadProjectiles.removeIf(p -> p.getEndCycle() <= client.getGameCycle());
-
 		handleHeads();
 
 		if (checkSpike){
@@ -311,7 +321,6 @@ public class ExtremeVardorvis extends Plugin
 
 				if (config.mistakeTracker())
 				{
-					client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "Stepped on a spike! Ow!", "");
 					client.getLocalPlayer().setOverheadText("Ow spiky!");
 					client.getLocalPlayer().setOverheadCycle(50);
 				}
@@ -321,7 +330,10 @@ public class ExtremeVardorvis extends Plugin
 //		handleAxes();
 
 		clientThread.invokeAtTickEnd(() -> {
-			bossAttackTimer--;
+			if (bossAttackTimer >= 0)
+			{
+				bossAttackTimer--;
+			}
 			headSpawnedThisTick = false;
 			if (axeAliveTicks >= 0)
 			{
@@ -370,6 +382,9 @@ public class ExtremeVardorvis extends Plugin
 	}
 
 	private void spawnHead(int projectileId){
+		if (arenaSWCorner == null){
+			return;
+		}
 		// don't send message for the second head
 		if (bossAttackTimer == 5)
 		{
@@ -387,10 +402,8 @@ public class ExtremeVardorvis extends Plugin
 //
 		List<WorldPoint> validPositions = tempSpawns.toWorldPointList();
 		// in future: remove player position and pillar positions
-//		validPositions.removeIf(w -> w.getX() == client.getLocalPlayer().getWorldLocation().getX() && w.getY() == client.getLocalPlayer().getWorldLocation().getY());
+		validPositions.removeIf(p -> p.getX() == client.getLocalPlayer().getWorldLocation().getX() && p.getY() == client.getLocalPlayer().getWorldLocation().getY());
 		WorldPoint spawnPos = validPositions.get(ThreadLocalRandom.current().nextInt(validPositions.size()));
-
-//		WorldPoint spawnPos = client.getLocalPlayer().getWorldLocation().dx(ThreadLocalRandom.current().nextInt(-3,4)).dy(ThreadLocalRandom.current().nextInt(-3,4));
 
 		RuneLiteObject head = client.createRuneLiteObject();
 
@@ -520,6 +533,45 @@ public class ExtremeVardorvis extends Plugin
 		}
 	}
 
+	private static void createHeadProjectile(Client client, int projectileID, RuneLiteObject head)
+	{
+		int tileHeight = client.getTileHeights()[0]
+		[head.getLocation().getSceneX()]
+		[head.getLocation().getSceneY()];
+
+		LocalPoint lp = head.getLocation();
+
+		Projectile proj = client.createProjectile(projectileID,
+			client.getPlane(),
+			lp.getX(),
+			lp.getY(),
+			tileHeight - 100, // z coordinate
+			client.getGameCycle() + 15,  // start cycle
+			client.getGameCycle() + 75,  // end cycle
+			8, // slope ???
+			80, // start height
+			80, // end height
+			client.getLocalPlayer(),
+			client.getLocalPlayer().getLocalLocation().getX(),
+			client.getLocalPlayer().getLocalLocation().getY()
+		);
+		client.getProjectiles()
+			.addLast(proj);
+	}
+
+	private void reset(){
+		arenaSWCorner = null;
+		inFight = false;
+		bossAttackTimer = -1;
+		nextPossibleOsu = -1;
+		headSpawnedThisTick = false;
+		axeAliveTicks = -1;
+		melees = 0;
+		missedPrayers = 0;
+		prayerCheckQueue.clear();
+		lastCaptchaTick = -1;
+		checkSpike = false;
+	}
 //	private void handleAxes(){
 //		switch (axeSpawnedTicks){
 //			case 0:
@@ -672,46 +724,6 @@ public class ExtremeVardorvis extends Plugin
 //				return 0;
 //		}
 //	}
-
-	private static void createHeadProjectile(Client client, int projectileID, RuneLiteObject head)
-	{
-		int tileHeight = client.getTileHeights()[0]
-		[head.getLocation().getSceneX()]
-		[head.getLocation().getSceneY()];
-
-		LocalPoint lp = head.getLocation();
-
-		Projectile proj = client.createProjectile(projectileID,
-			client.getPlane(),
-			lp.getX(),
-			lp.getY(),
-			tileHeight - 100, // z coordinate
-			client.getGameCycle() + 15,  // start cycle
-			client.getGameCycle() + 75,  // end cycle
-			8, // slope ???
-			80, // start height
-			80, // end height
-			client.getLocalPlayer(),
-			client.getLocalPlayer().getLocalLocation().getX(),
-			client.getLocalPlayer().getLocalLocation().getY()
-		);
-		client.getProjectiles()
-			.addLast(proj);
-	}
-
-	private void reset(){
-		arenaSWCorner = null;
-		inFight = false;
-		bossAttackTimer = -1;
-		nextPossibleOsu = -1;
-		headSpawnedThisTick = false;
-		axeAliveTicks = -1;
-		missedPrayers = 0;
-		prayerCheckQueue.clear();
-		lastCaptchaTick = -1;
-		checkSpike = false;
-	}
-
 //	private void moveAxes(){
 //		for (RuneLiteObject tendril : fakeTendrils){
 //			if (Objects.requireNonNull(tendril.getAnimation()).getId() == 10364)
