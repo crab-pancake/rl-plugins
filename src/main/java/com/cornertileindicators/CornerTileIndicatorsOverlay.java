@@ -82,12 +82,13 @@ public class CornerTileIndicatorsOverlay extends Overlay
 		if (config.highlightCurrentTile())
 		{
 			WorldPoint playerPos = client.getLocalPlayer().getWorldLocation();
+			LocalPoint localPos = client.getLocalPlayer().getLocalLocation();
 
-			if (!playerPos.equals(lastPlayerPosition))
+			if (!WorldPoint.fromLocal(client,localPos).equals(playerPos))
 			{
 				lastTickPlayerMoved = client.getTickCount();
 			}
-			else if (lastTickPlayerMoved + 1 == client.getTickCount())
+			else if (lastTickPlayerMoved == client.getTickCount())
 			{
 				lastTimePlayerStoppedMoving = System.currentTimeMillis();
 			}
@@ -102,7 +103,7 @@ public class CornerTileIndicatorsOverlay extends Overlay
 				// When not fading out the current tile, or when it has been 1 game tick or less since the player last
 				// moved, draw the tile at full opacity. When using fadeout, drawing the indicator at full opacity for 1
 				// game tick prevents it from fading out when moving on consecutive ticks.
-				if (!config.trueTileFadeout() || client.getTickCount() - lastTickPlayerMoved <= 1)
+				if (!config.trueTileFadeout() || client.getTickCount() - lastTickPlayerMoved <= 0)
 				{
 					renderTile(graphics, playerPosLocal, color, config.currentTileBorderWidth(), fillColor, config.currentTileCornersOnly(), config.currentTileCornerSize());
 				}
