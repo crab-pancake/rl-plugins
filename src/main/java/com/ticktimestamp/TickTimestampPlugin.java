@@ -39,7 +39,7 @@ public class TickTimestampPlugin extends Plugin
 	public void onChatMessage(ChatMessage event)
 	{
 		ChatMessageType type = event.getType();
-		if (!ChatMessageType.GAMEMESSAGE.equals(type) && !ChatMessageType.SPAM.equals(type))
+		if (!ChatMessageType.GAMEMESSAGE.equals(type) && !ChatMessageType.SPAM.equals(type) && !ChatMessageType.CONSOLE.equals(type))
 		{
 			return;
 		}
