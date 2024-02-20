@@ -35,7 +35,7 @@ public class TickTimestampPlugin extends Plugin
 		return configManager.getConfig(TickTimestampConfig.class);
 	}
 
-	@Subscribe
+	@Subscribe(priority = -100)
 	public void onChatMessage(ChatMessage event)
 	{
 		ChatMessageType type = event.getType();
@@ -59,7 +59,6 @@ public class TickTimestampPlugin extends Plugin
 		{
 			case LOGGING_IN:
 			case HOPPING:
-			case CONNECTION_LOST:
 				loginGameTick = client.getTickCount();
 				break;
 		}
