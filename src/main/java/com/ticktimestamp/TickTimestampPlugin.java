@@ -118,7 +118,7 @@ public class TickTimestampPlugin extends Plugin
 			timestamp = ColorUtil.wrapWithColorTag(timestamp, timestampColour);
 		}
 
-		return timestamp + ":";
+		return "["+timestamp + "]";
 	}
 
 	private void updateTypes(){

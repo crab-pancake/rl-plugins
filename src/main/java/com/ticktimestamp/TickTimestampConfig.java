@@ -11,7 +11,7 @@ public interface TickTimestampConfig extends Config
 	@ConfigItem(
 		keyName = "chatmessages",
 		name = "Chat messages",
-		description = "Display timestamp on public, private, fc, clan chats"
+		description = "Display timestamp on public and private chats"
 	)
 	default boolean chatMessage()
 	{
