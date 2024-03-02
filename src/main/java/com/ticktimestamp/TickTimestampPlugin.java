@@ -48,6 +48,12 @@ public class TickTimestampPlugin extends Plugin
 		return configManager.getConfig(TickTimestampConfig.class);
 	}
 
+	@Override
+	protected void startUp()
+	{
+		updateTypes();
+	}
+
 	@Subscribe
 	private void onGameStateChanged(GameStateChanged e){
 		switch(e.getGameState())
