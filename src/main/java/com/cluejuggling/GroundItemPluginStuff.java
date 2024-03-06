@@ -26,20 +26,15 @@
 package com.cluejuggling;
 
 import com.google.common.collect.EvictingQueue;
-import net.runelite.api.InventoryID;
-import net.runelite.api.Item;
 import net.runelite.api.ItemComposition;
-import net.runelite.api.ItemContainer;
 import net.runelite.api.MenuAction;
 import net.runelite.api.Tile;
 import net.runelite.api.TileItem;
-import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.eventbus.Subscribe;
 
 import javax.inject.Inject;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Queue;
 
@@ -48,17 +43,6 @@ import java.util.Queue;
  */
 public class GroundItemPluginStuff
 {
-	private static final Duration DESPAWN_TIME_INSTANCE = Duration.ofMinutes(30);
-	private static final Duration DESPAWN_TIME_LOOT = Duration.ofMinutes(2);
-	private static final Duration DESPAWN_TIME_DROP = Duration.ofMinutes(3);
-	private static final Duration DESPAWN_TIME_TABLE = Duration.ofMinutes(10);
-	private static final int KRAKEN_REGION = 9116;
-	private static final int KBD_NMZ_REGION = 9033;
-	private static final int ZILYANA_REGION = 11602;
-	private static final int GRAARDOR_REGION = 11347;
-	private static final int KRIL_TSUTSAROTH_REGION = 11603;
-	private static final int KREEARRA_REGION = 11346;
-	private static final int NIGHTMARE_REGION = 15515;
 
 	@Inject
 	private ClueScrollJugglingPlugin plugin;
@@ -66,98 +50,6 @@ public class GroundItemPluginStuff
 	public GroundItemPluginStuff(ClueScrollJugglingPlugin plugin)
 	{
 		this.plugin = plugin;
-	}
-
-	Instant calculateDespawnTime(GroundItem groundItem)
-	{
-		// We can only accurately guess despawn times for our own pvm loot, dropped items,
-		// and items we placed on tables
-		if (groundItem.getLootType() != LootType.PVM
-			&& groundItem.getLootType() != LootType.DROPPED
-			&& groundItem.getLootType() != LootType.TABLE)
-		{
-			return null;
-		}
-
-		// Loot appears to others after 1 minute, and despawns after 2 minutes
-		// Dropped items appear to others after 1 minute, and despawns after 3 minutes
-		// Items in instances never appear to anyone and despawn after 30 minutes
-
-		Instant spawnTime = groundItem.getSpawnTime();
-		if (spawnTime == null)
-		{
-			return null;
-		}
-
-		final Instant despawnTime;
-		Instant now = Instant.now();
-		if (plugin.client.isInInstancedRegion())
-		{
-			final int playerRegionID = WorldPoint.fromLocalInstance(plugin.client, plugin.client.getLocalPlayer().getLocalLocation()).getRegionID();
-			if (playerRegionID == KRAKEN_REGION)
-			{
-				// Items in the Kraken instance never despawn
-				return null;
-			}
-			else if (playerRegionID == KBD_NMZ_REGION)
-			{
-				// NMZ and the KBD lair uses the same region ID but NMZ uses planes 1-3 and KBD uses plane 0
-				if (plugin.client.getLocalPlayer().getWorldLocation().getPlane() == 0)
-				{
-					// Items in the KBD instance use the standard despawn timer
-					despawnTime = spawnTime.plus(groundItem.getLootType() == LootType.DROPPED
-						? DESPAWN_TIME_DROP
-						: DESPAWN_TIME_LOOT);
-				}
-				else
-				{
-					if (groundItem.getLootType() == LootType.DROPPED)
-					{
-						// Dropped items in the NMZ instance never despawn
-						return null;
-					}
-					else
-					{
-						despawnTime = spawnTime.plus(DESPAWN_TIME_LOOT);
-					}
-				}
-			}
-			else if (playerRegionID == ZILYANA_REGION || playerRegionID == GRAARDOR_REGION ||
-				playerRegionID == KRIL_TSUTSAROTH_REGION || playerRegionID == KREEARRA_REGION || playerRegionID == NIGHTMARE_REGION)
-			{
-				// GWD and Nightmare instances use the normal despawn timers
-				despawnTime = spawnTime.plus(groundItem.getLootType() == LootType.DROPPED
-					? DESPAWN_TIME_DROP
-					: DESPAWN_TIME_LOOT);
-			}
-			else
-			{
-				despawnTime = spawnTime.plus(DESPAWN_TIME_INSTANCE);
-			}
-		}
-		else
-		{
-			switch (groundItem.getLootType())
-			{
-				case DROPPED:
-					despawnTime = spawnTime.plus(DESPAWN_TIME_DROP);
-					break;
-				case TABLE:
-					despawnTime = spawnTime.plus(DESPAWN_TIME_TABLE);
-					break;
-				default:
-					despawnTime = spawnTime.plus(DESPAWN_TIME_LOOT);
-					break;
-			}
-		}
-
-		if (now.isBefore(spawnTime) || now.isAfter(despawnTime))
-		{
-			// that's weird
-			return null;
-		}
-
-		return despawnTime;
 	}
 
 	private final Queue<Integer> droppedItemQueue = EvictingQueue.create(16); // recently dropped items
@@ -186,17 +78,6 @@ public class GroundItemPluginStuff
 			.spawnTime(Instant.now())
 			.stackable(itemComposition.isStackable())
 			.build();
-
-//        // Update item price in case it is coins
-//        if (realItemId == COINS)
-//        {
-//            groundItem.setHaPrice(1);
-//            groundItem.setGePrice(1);
-//        }
-//        else
-//        {
-//            groundItem.setGePrice(itemManager.getItemPrice(realItemId));
-//        }
 
 		return groundItem;
 	}

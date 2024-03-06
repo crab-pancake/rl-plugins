@@ -89,7 +89,7 @@ public class ClueScrollJugglingPlugin extends Plugin
 		GroundItem.GroundItemKey groundItemKey = new GroundItem.GroundItemKey(item.getId(), tile.getWorldLocation());
 
 		if (!dropTimers.containsKey(groundItemKey)) {
-			Instant despawnTime = groundItemPluginStuff.calculateDespawnTime(groundItemPluginStuff.buildGroundItem(tile, item));
+			Instant despawnTime = groundItemPluginStuff.buildGroundItem(tile, item).getSpawnTime().plus(Duration.ofHours(1));
 //			instant.compareTo(Instant.now());
 			Duration between = Duration.between(Instant.now(), despawnTime);
 			Timer timer = new Timer(between.getSeconds(), ChronoUnit.SECONDS, itemManager.getImage(item.getId()), this) {
