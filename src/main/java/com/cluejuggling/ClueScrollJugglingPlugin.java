@@ -64,13 +64,13 @@ public class ClueScrollJugglingPlugin extends Plugin
 	@Inject
 	private Notifier notifier;
 
-	private GroundItemPluginStuff groundItemPluginStuff = new GroundItemPluginStuff(this);
+	private final GroundItemPluginStuff groundItemPluginStuff = new GroundItemPluginStuff(this);
 
 	@Inject
 	private ClueScrollJugglingOverlay overlay;
 
 	public Map<GroundItem.GroundItemKey, Timer> dropTimers = new HashMap<>();
-	private Set<GroundItem.GroundItemKey> alreadyNotified = new HashSet<>();
+	private final Set<GroundItem.GroundItemKey> alreadyNotified = new HashSet<>();
 
 	@Provides
 	public ClueScrollJugglingConfig getConfig(ConfigManager configManager) {
@@ -90,7 +90,6 @@ public class ClueScrollJugglingPlugin extends Plugin
 
 		if (!dropTimers.containsKey(groundItemKey)) {
 			Instant despawnTime = groundItemPluginStuff.buildGroundItem(tile, item).getSpawnTime().plus(Duration.ofHours(1));
-//			instant.compareTo(Instant.now());
 			Duration between = Duration.between(Instant.now(), despawnTime);
 			Timer timer = new Timer(between.getSeconds(), ChronoUnit.SECONDS, itemManager.getImage(item.getId()), this) {
 				@Override
@@ -155,6 +154,7 @@ public class ClueScrollJugglingPlugin extends Plugin
 	protected void shutDown()
 	{
 		overlayManager.remove(overlay);
+		infoBoxManager.removeIf(box -> box instanceof Timer && dropTimers.containsValue((Timer) box));
 		eventBus.unregister(groundItemPluginStuff);
 	}
 
@@ -189,5 +189,4 @@ public class ClueScrollJugglingPlugin extends Plugin
 			return showTimer.test(config);
 		}
 	}
-
 }

@@ -26,6 +26,7 @@ package com.cluejuggling;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.Setter;
 import lombok.Value;
 import net.runelite.api.coords.WorldPoint;
 
@@ -40,39 +41,18 @@ class GroundItem
 {
 	private int id;
 	private int itemId;
-	private String name;
-	private int quantity;
 	private WorldPoint location;
 	private int height;
-	private int haPrice;
-	private int gePrice;
 	private int offset;
-	private boolean tradeable;
 	@Nonnull
 	private LootType lootType;
 	@Nullable
 	private Instant spawnTime;
-	private boolean stackable;
-
-	int getHaPrice()
-	{
-		return haPrice * quantity;
-	}
-
-	int getGePrice()
-	{
-		return gePrice * quantity;
-	}
-
-	boolean isMine()
-	{
-		return lootType != LootType.UNKNOWN;
-	}
 
 	@Value
 	public static class GroundItemKey
 	{
-		private int itemId;
-		private WorldPoint location;
+		int itemId;
+		WorldPoint location;
 	}
 }

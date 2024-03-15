@@ -3,6 +3,7 @@ package com.cluejuggling;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
+import net.runelite.client.plugins.grounditems.config.DespawnTimerMode;
 
 @ConfigGroup("cluescrolljuggling")
 public interface ClueScrollJugglingConfig extends Config
@@ -15,7 +16,7 @@ public interface ClueScrollJugglingConfig extends Config
 	)
 	default int notificationTime()
 	{
-		return 30;
+		return 60;
 	}
 
 	@ConfigItem(
@@ -93,5 +94,16 @@ public interface ClueScrollJugglingConfig extends Config
 	default boolean masterTimers()
 	{
 		return true;
+	}
+
+	@ConfigItem(
+		keyName = "despawnTimerMode",
+		name = "Despawn timer mode",
+		description = "",
+		position = 2
+	)
+	default DespawnTimerMode timerMode()
+	{
+		return DespawnTimerMode.TICKS;
 	}
 }
