@@ -11,6 +11,7 @@ import net.runelite.api.Client;
 import net.runelite.api.MessageNode;
 import net.runelite.api.ScriptID;
 import net.runelite.api.Varbits;
+import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.ScriptCallbackEvent;
 import net.runelite.client.callback.ClientThread;
@@ -83,6 +84,13 @@ public class TickTimestampPlugin extends Plugin
 	}
 
 	@Subscribe
+	private void onChatMessage(ChatMessage e){
+		if (e.getMessageNode().getTimestamp() >> 24 > 1){
+			e.getMessageNode().setTimestamp(client.getTickCount());
+		}
+	}
+
+	@Subscribe
 	private void onScriptCallbackEvent(ScriptCallbackEvent event)
 	{
 		if (!"chatMessageBuilding".equals(event.getEventName()))
@@ -129,12 +137,10 @@ public class TickTimestampPlugin extends Plugin
 
 	private void updateTypes(){
 		if (config.chatMessage()){
-			timestampedTypes.addAll(Arrays.asList(ChatMessageType.PUBLICCHAT, ChatMessageType.PRIVATECHAT, ChatMessageType.PRIVATECHATOUT,
-				ChatMessageType.CLAN_CHAT, ChatMessageType.CLAN_GUEST_CHAT));
+			timestampedTypes.addAll(Arrays.asList(ChatMessageType.PUBLICCHAT, ChatMessageType.PRIVATECHAT, ChatMessageType.PRIVATECHATOUT));
 		}
 		else {
-			Arrays.asList(ChatMessageType.PUBLICCHAT,ChatMessageType.PRIVATECHAT,ChatMessageType.PRIVATECHATOUT,
-				ChatMessageType.CLAN_CHAT,ChatMessageType.CLAN_GUEST_CHAT).forEach(timestampedTypes::remove);
+			Arrays.asList(ChatMessageType.PUBLICCHAT,ChatMessageType.PRIVATECHAT,ChatMessageType.PRIVATECHATOUT).forEach(timestampedTypes::remove);
 		}
 	}
 }
