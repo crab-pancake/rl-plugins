@@ -5,8 +5,8 @@ import java.awt.Cursor;
 import java.awt.Point;
 import java.awt.Polygon;
 import java.awt.image.BufferedImage;
-import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -44,11 +44,15 @@ public class HoverTileWarning extends Plugin
 //	@Inject
 //	private DebugOverlay overlay;
 
-//	@Inject
-//	private OverlayManager overlayManager;
+	@Inject
+	private TileOverlay overlay;
+
+	@Inject
+	private OverlayManager overlayManager;
 
 	private Cursor customCursor = null;
-	private boolean wasBadHover = false;
+	boolean badHover;
+	boolean wasBadHover = false;
 	LocalPoint lastHoveredTile = null;
 	private boolean walk = false;
 	private BufferedImage warnCursor;
@@ -66,7 +70,7 @@ public class HoverTileWarning extends Plugin
 	@Override
 	protected void startUp()
 	{
-//		overlayManager.add(overlay);
+		overlayManager.add(overlay);
 
 		warnCursor = ImageUtil.loadImageResource(HoverTileWarning.class, "/warn cursor.png");
 		blockCursor = ImageUtil.loadImageResource(HoverTileWarning.class, "/block cursor.png");
@@ -83,7 +87,7 @@ public class HoverTileWarning extends Plugin
 	@Override
 	protected void shutDown()
 	{
-//		overlayManager.remove(overlay);
+		overlayManager.remove(overlay);
 
 		resetCursor();
 	}
@@ -131,17 +135,20 @@ public class HoverTileWarning extends Plugin
 			return;
 		}
 
-		if (client.getSelectedSceneTile() == null && config.showUnclickable() && !Objects.equals(clientUI.getCurrentCursor().getName(), BLOCKED_NAME))
+		if (client.getSelectedSceneTile() == null && config.showUnclickable() && !BLOCKED_NAME.equals(clientUI.getCurrentCursor().getName()))
 		{
+			if (client.getPlane() > 0){
+				return;
+			}
 			clientUI.setCursor(blockCursor, BLOCKED_NAME);
 			return;
 		}
 
 		if (client.getSelectedSceneTile() == null || !config.showUnexpected())
 			return;
-
 		// selected scene tile exists
-		if (Objects.equals(clientUI.getCurrentCursor().getName(), BLOCKED_NAME)){
+
+		if (BLOCKED_NAME.equals(clientUI.getCurrentCursor().getName())){
 			resetCursor();
 		}
 
@@ -157,7 +164,7 @@ public class HoverTileWarning extends Plugin
 				return;
 			}
 
-			boolean badHover = !poly.contains(new Point(client.getMouseCanvasPosition().getX(), client.getMouseCanvasPosition().getY()));
+			badHover = !poly.getBounds().contains(new Point(client.getMouseCanvasPosition().getX(), client.getMouseCanvasPosition().getY()));
 
 			if (badHover && !wasBadHover)
 			{
@@ -185,7 +192,7 @@ public class HoverTileWarning extends Plugin
 	}
 
 	private void resetCursor(){
-		if (!List.of(WARN_NAME,BLOCKED_NAME).contains(clientUI.getCurrentCursor().getName()))
+		if (!Set.of(WARN_NAME,BLOCKED_NAME).contains(clientUI.getCurrentCursor().getName()))
 		{
 			return;
 		}
