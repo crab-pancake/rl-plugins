@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
+import javax.inject.Inject;
 import net.runelite.api.Client;
 import net.runelite.api.Perspective;
 import net.runelite.api.coords.LocalPoint;
@@ -20,17 +21,17 @@ public class TileOverlay extends Overlay
 
 	final Color clear = new Color(0,0,0,0);
 
+	@Inject
 	TileOverlay(Client client, HoverTileWarning plugin) {
         this.plugin = plugin;
         this.client = client;
         setPosition(DYNAMIC);
         setLayer(OverlayLayer.ABOVE_SCENE);
-
     }
 
     @Override
     public Dimension render(Graphics2D graphics) {
-        if (plugin.badHover){
+        if (plugin.walk && plugin.badHover && plugin.wasBadHover){
 			if (client.getSelectedSceneTile() != null)
 			{
 				final LocalPoint dest = client.getSelectedSceneTile().getLocalLocation();

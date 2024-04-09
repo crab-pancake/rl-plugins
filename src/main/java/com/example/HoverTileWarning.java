@@ -52,9 +52,9 @@ public class HoverTileWarning extends Plugin
 
 	private Cursor customCursor = null;
 	boolean badHover;
-	boolean wasBadHover = false;
+	boolean wasBadHover;
 	LocalPoint lastHoveredTile = null;
-	private boolean walk = false;
+	boolean walk;
 	private BufferedImage warnCursor;
 	private BufferedImage blockCursor;
 
