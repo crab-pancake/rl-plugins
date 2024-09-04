@@ -135,7 +135,7 @@ public class XpDropDamageCalculator
 		return calculateHit(hpXpDiff, modifier, configModifier);
 	}
 
-	public int calculateHitOnNpc(int id, int hpXpDiff, double configModifier)
+	public int calculateHitOnNpc(int id, int hpXpDiff, double configModifier, boolean ignoreDefault)
 	{
 		double modifier = 1.0;
 		if (CoXNPCs.isCOXNPC(id))
@@ -171,6 +171,12 @@ public class XpDropDamageCalculator
 		{
 			modifier = XP_BONUS_MAPPING.get(id);
 		}
+
+		if (ignoreDefault && modifier == 1.0 && configModifier == 1.0){
+			log.debug("Ignoring hitsplat due to default xp multiplier");
+			return 0;
+		}
+
 		return calculateHit(hpXpDiff, modifier, configModifier);
 	}
 

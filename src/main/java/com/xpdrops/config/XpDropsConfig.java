@@ -545,6 +545,18 @@ public interface XpDropsConfig extends Config
 	}
 
 	@ConfigItem(
+			keyName = "ignoreDefaultMultiplier",
+			name = "Don't predict hits with default xp multiplier",
+			description = "Only show hits with a custom xp multiplier or boosted xp in config",
+			position = 27,
+			section = predicted_hit
+	)
+	default boolean ignoreDefaultMultiplier()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = "useXpTracker",
 		name = "Use xp tracker",
 		description = "Enable or disable custom xp tracker",
