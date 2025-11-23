@@ -8,7 +8,7 @@ import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigSection;
 import net.runelite.client.config.Range;
-import net.runelite.client.ui.overlay.OverlayPriority;
+import net.runelite.client.ui.overlay.Overlay;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -23,9 +23,9 @@ public interface XpDropsConfig extends Config
 		BOLD_ITALICS("Bold and italics", Font.BOLD | Font.ITALIC),
 		DEFAULT("Default", Font.PLAIN);
 
-		String name;
+		private final String name;
 		@Getter
-		private int style;
+		private final int style;
 
 		FontStyle(String name, int style)
 		{
@@ -557,6 +557,21 @@ public interface XpDropsConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "predictedHitModifiers",
+		name = "Predicted hit xp modifiers",
+		description = "Advanced. Enter your own xp modifiers per NPC id here.<br>" +
+			"Format as NPC id:xp modifier. Separate each entry with a newline.<br>" +
+			"For example if a goblin has an NPC id of 2 and an xp bonus of 35% then enter 2:1.35 in this field. If a rat has NPC id of 3 and an xp bonus of -75% then enter 3:0.25<br>"  +
+			"Modifiers entered here will supersede the modifiers shipped with the plugin!",
+		position = 27,
+		section = predicted_hit
+	)
+	default String predictedHitModifiers()
+	{
+		return "";
+	}
+
+	@ConfigItem(
 		keyName = "useXpTracker",
 		name = "Use xp tracker",
 		description = "Enable or disable custom xp tracker",
@@ -767,7 +782,7 @@ public interface XpDropsConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "xpDropOverlayPriority",
+		keyName = "xpDropOverlayPriority1",
 		name = "Xp drop overlay priority",
 		description = "The priority of the xp drop overlay with relation to the other overlays.<br>" +
 			"This impacts the sorting of the overlays attached to the same overlay group (eg. the top right corner overlay group).<br>" +
@@ -775,13 +790,13 @@ public interface XpDropsConfig extends Config
 		position = 5,
 		section = xp_miscellaneous_settings
 	)
-	default OverlayPriority xpDropOverlayPriority()
+	default double xpDropOverlayPriority()
 	{
-		return OverlayPriority.HIGH;
+		return Overlay.PRIORITY_HIGH;
 	}
 
 	@ConfigItem(
-		keyName = "xpTrackerOverlayPriority",
+		keyName = "xpTrackerOverlayPriority1",
 		name = "Xp tracker overlay priority",
 		description = "The priority of the xp tracker overlay with relation to the other overlays.<br>" +
 			"This impacts the sorting of the overlays attached to the same overlay group (eg. the top right corner overlay group).<br>" +
@@ -789,8 +804,8 @@ public interface XpDropsConfig extends Config
 		position = 6,
 		section = xp_miscellaneous_settings
 	)
-	default OverlayPriority xpTrackerOverlayPriority()
+	default double xpTrackerOverlayPriority()
 	{
-		return OverlayPriority.HIGHEST;
+		return Overlay.PRIORITY_HIGHEST;
 	}
 }

@@ -2,19 +2,20 @@ package com.xpdrops.predictedhit.npcswithscalingbonus;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.Constants;
 import net.runelite.api.GameState;
 import net.runelite.api.InstanceTemplates;
-import net.runelite.api.NullObjectID;
 import net.runelite.api.Point;
 import net.runelite.api.Tile;
-import net.runelite.api.VarPlayer;
-import net.runelite.api.Varbits;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.VarbitChanged;
+import net.runelite.api.gameval.VarPlayerID;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.plugins.raids.Raid;
 import net.runelite.client.plugins.raids.RaidRoom;
 
@@ -28,6 +29,13 @@ import static net.runelite.api.Perspective.SCENE_SIZE;
 @Singleton
 public class ChambersLayoutSolver
 {
+	public enum RaidType
+	{
+		UNKNOWN,
+		REGULAR,
+		CM
+	}
+
 	static final int ROOM_MAX_SIZE = 32;
 	private static final int LOBBY_PLANE = 3;
 	private static final int SECOND_FLOOR_PLANE = 2;
@@ -36,11 +44,12 @@ public class ChambersLayoutSolver
 	private static final WorldPoint TEMP_LOCATION = new WorldPoint(3360, 5152, 2);
 	private static final String CM_RAID_CODE = "SPCFPC#¤CFP SPC#";
 
-	private Client client;
+	private final Client client;
 	boolean checkInRaid;
 	private boolean loggedIn;
 	private boolean inRaidChambers;
 	private int raidPartyID;
+	private RaidType isCM = RaidType.UNKNOWN;
 	@Getter
 	private Raid raid;
 
@@ -50,37 +59,50 @@ public class ChambersLayoutSolver
 		this.client = client;
 	}
 
-	public boolean isCM()
+
+
+	public RaidType getRaidType()
 	{
-		return raid != null && CM_RAID_CODE.equals(raid.toCode());
+		return this.isCM;
 	}
 
 	public void onVarbitChanged(VarbitChanged event)
 	{
-		if (event.getVarpId() == VarPlayer.IN_RAID_PARTY)
+		if (event.getVarpId() == VarPlayerID.RAIDS_PARTY_GROUPHOLDER)
 		{
-			boolean tempInRaid = client.getVarbitValue(Varbits.IN_RAID) == 1;
-			if (loggedIn && !tempInRaid)
-			{
-				raid = null;
-			}
-
+			boolean inRaid = inRaidChambers;
+			int prevRaidID = raidPartyID;
 			raidPartyID = event.getValue();
+
+			if (client.getGameState() == GameState.LOGGED_IN)
+			{
+				if (!inRaid || (prevRaidID != -1 && raidPartyID != -1 && prevRaidID != raidPartyID))
+				{
+					raid = null;
+				}
+			}
 		}
 
-		if (event.getVarbitId() == Varbits.IN_RAID)
+		if (event.getVarbitId() == VarbitID.RAIDS_CLIENT_INDUNGEON)
 		{
-			boolean tempInRaid = event.getValue() == 1;
-			if (tempInRaid && loggedIn)
-			{
-				checkRaidPresence();
-			}
+			boolean inRaid = event.getValue() == 1;
+			inRaidChambers = inRaid;
 
-			inRaidChambers = tempInRaid;
+			if (client.getGameState() == GameState.LOGGED_IN)
+			{
+				if (inRaid)
+				{
+					checkRaidPresence();
+				}
+				else if (raidPartyID == -1)
+				{
+					raid = null;
+				}
+			}
 		}
 	}
 
-	public void onGameTick(GameTick event)
+	public void onGameTick(GameTick ignored)
 	{
 		if (checkInRaid)
 		{
@@ -101,7 +123,7 @@ public class ChambersLayoutSolver
 		}
 	}
 
-	public void onGameStateChanged(GameStateChanged event)
+	public void onGameStateChanged(GameStateChanged ignored)
 	{
 		if (client.getGameState() == GameState.LOGGED_IN)
 		{
@@ -124,6 +146,16 @@ public class ChambersLayoutSolver
 		}
 	}
 
+	public void onChatMessage(ChatMessage chatMessage)
+	{
+		if (chatMessage.getType() != ChatMessageType.FRIENDSCHATNOTIFICATION
+			|| !chatMessage.getMessage().startsWith("Map Layout:"))
+		{
+			return;
+		}
+		this.isCM = chatMessage.getMessage().equals("Map Layout: Challenge Mode (Full).") ? RaidType.CM : RaidType.REGULAR;
+	}
+
 	private void checkRaidPresence()
 	{
 		if (client.getGameState() != GameState.LOGGED_IN)
@@ -131,7 +163,7 @@ public class ChambersLayoutSolver
 			return;
 		}
 
-		inRaidChambers = client.getVarbitValue(Varbits.IN_RAID) == 1;
+		inRaidChambers = client.getVarbitValue(VarbitID.RAIDS_CLIENT_INDUNGEON) == 1;
 
 		if (!inRaidChambers)
 		{
@@ -162,7 +194,7 @@ public class ChambersLayoutSolver
 			}
 
 			raid = new Raid(
-				new WorldPoint(client.getBaseX() + gridBase.getX(), client.getBaseY() + gridBase.getY(), LOBBY_PLANE),
+				new WorldPoint(client.getTopLevelWorldView().getBaseX() + gridBase.getX(), client.getTopLevelWorldView().getBaseY() + gridBase.getY(), LOBBY_PLANE),
 				lobbyIndex
 			);
 		}
@@ -182,8 +214,8 @@ public class ChambersLayoutSolver
 			x = raid.getGridBase().getX() + x * ROOM_MAX_SIZE;
 			y = raid.getGridBase().getY() - y * ROOM_MAX_SIZE;
 
-			x = x - client.getBaseX();
-			y = y - client.getBaseY();
+			x = x - client.getTopLevelWorldView().getBaseX();
+			y = y - client.getTopLevelWorldView().getBaseY();
 
 			if (x < (1 - ROOM_MAX_SIZE) || x >= SCENE_SIZE)
 			{
@@ -199,7 +231,7 @@ public class ChambersLayoutSolver
 				y = 1;
 			}
 
-			Tile tile = client.getScene().getTiles()[plane][x][y];
+			Tile tile = client.getTopLevelWorldView().getScene().getTiles()[plane][x][y];
 
 			if (tile == null)
 			{
@@ -215,7 +247,7 @@ public class ChambersLayoutSolver
 
 	private Point findLobbyBase()
 	{
-		Tile[][] tiles = client.getScene().getTiles()[LOBBY_PLANE];
+		Tile[][] tiles = client.getTopLevelWorldView().getScene().getTiles()[LOBBY_PLANE];
 
 		for (int x = 0; x < SCENE_SIZE; x++)
 		{
@@ -226,7 +258,7 @@ public class ChambersLayoutSolver
 					continue;
 				}
 
-				if (tiles[x][y].getWallObject().getId() == NullObjectID.NULL_12231)
+				if (tiles[x][y].getWallObject().getId() == 12231)
 				{
 					return tiles[x][y].getSceneLocation();
 				}
@@ -238,7 +270,7 @@ public class ChambersLayoutSolver
 
 	private RaidRoom determineRoom(Tile base)
 	{
-		int chunkData = client.getInstanceTemplateChunks()[base.getPlane()][(base.getSceneLocation().getX()) / 8][base.getSceneLocation().getY() / 8];
+		int chunkData = client.getTopLevelWorldView().getInstanceTemplateChunks()[base.getPlane()][(base.getSceneLocation().getX()) / 8][base.getSceneLocation().getY() / 8];
 		InstanceTemplates template = InstanceTemplates.findMatch(chunkData);
 
 		if (template == null)
@@ -297,7 +329,7 @@ public class ChambersLayoutSolver
 		}
 		int x;
 		int y;
-		Tile[][] tiles = client.getScene().getTiles()[LOBBY_PLANE];
+		Tile[][] tiles = client.getTopLevelWorldView().getScene().getTiles()[LOBBY_PLANE];
 		if (tiles[gridBase.getX()][gridBase.getY() + ROOM_MAX_SIZE] == null)
 		{
 			y = 0;

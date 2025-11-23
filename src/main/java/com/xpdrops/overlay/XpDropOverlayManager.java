@@ -37,7 +37,7 @@ public class XpDropOverlayManager
 	private static final int FAKE_SKILL_ICON_ID = 423; //sprite index 11
 	private static final int[] SKILL_ICON_ORDINAL_ICONS = new int[]{
 		197, 199, 198, 203, 200, 201, 202, 212, 214, 208,
-		211, 213, 207, 210, 209, 205, 204, 206, 216, 217, 215, 220, 221, 898
+		211, 213, 207, 210, 209, 205, 204, 206, 216, 217, 215, 220, 221, 228, 898
 	};
 
 	// key: icon + spriteIndex << 16
@@ -48,9 +48,21 @@ public class XpDropOverlayManager
 	public static final float CONSTANT_FRAME_TIME = 1000.0f / FRAMES_PER_SECOND;
 	public static final DecimalFormat XP_FORMATTER = new DecimalFormat(XP_FORMAT_PATTERN);
 	public static final Font RUNESCAPE_BOLD_FONT = XpDropOverlayUtilities.initRuneScapeBold();
-	// Used to order skills in the same order as the vanilla xp drops would display them
-	public static final int[] SKILL_INDICES = new int[] {10, 0, 2, 4, 6, 1, 3, 5, 16, 15, 17, 12, 20, 14, 13, 7, 11, 8, 9, 18, 19, 22, 21};
+	// Used to order skills in the same order as the vanilla xp drops would display them.
+	// Used to inverse skill_priority.
+	// ordinal = priority[skill_indices[ordinal]]
+	public static final int[] SKILL_INDICES = new int[]{
+		10, 0, 2, 4, 6, 1, 3, 5, 16, 15, 17, 12, 20, 14, 13, 7, 11, 8, 9, 18, 19, 22, 21, 23
+	};
+	public static final int NUMBER_OF_SKILLS = 23;
+	public static final int FAKE_SKILL_ICON_INDEX = NUMBER_OF_SKILLS + 1;
+	public static final int HITSPLAT_ICON_INDEX = NUMBER_OF_SKILLS + 2;
+	public static final int SKILL_FLAGS_MASK = (1 << (NUMBER_OF_SKILLS + 1)) - 1;
+	public static final int FAKE_SKILL_FLAGS_MASK = 1 << FAKE_SKILL_ICON_INDEX;
+	public static final int HITSPLAT_FLAGS_MASK = 1 << HITSPLAT_ICON_INDEX;
 
+	@Inject
+	private XpDropMerger xpDropMerger;
 	@Inject
 	private XpDropOverlay xpDropOverlay;
 	@Inject
@@ -121,13 +133,13 @@ public class XpDropOverlayManager
 
 	public void xpDropOverlayPriorityChanged()
 	{
-		xpDropOverlay.setPriority(config.xpDropOverlayPriority());
+		xpDropOverlay.setPriority((float) config.xpDropOverlayPriority());
 		overlayManager.saveOverlay(xpDropOverlay);
 	}
 
 	public void xpTrackerOverlayPriorityChanged()
 	{
-		xpTrackerOverlay.setPriority(config.xpTrackerOverlayPriority());
+		xpTrackerOverlay.setPriority((float) config.xpTrackerOverlayPriority());
 		overlayManager.saveOverlay(xpTrackerOverlay);
 	}
 
@@ -186,12 +198,7 @@ public class XpDropOverlayManager
 			lastFrameTime = System.currentTimeMillis() - 20; // set last frame 20 ms ago.
 		}
 
-		Skill _lastSkill = pollLastSkill();
-		if (_lastSkill != null)
-		{
-			lastSkillSetMillis = System.currentTimeMillis();
-			lastSkill = _lastSkill;
-		}
+		refreshXpTracker();
 
 		updateDrops();
 		pollDrops();
@@ -199,25 +206,46 @@ public class XpDropOverlayManager
 		lastFrameTime = System.currentTimeMillis();
 	}
 
-	private Skill pollLastSkill()
+	private void refreshXpTracker()
 	{
-		Skill currentSkill = null;
-		if (config.xpTrackerSkill().equals(XpTrackerSkills.MOST_RECENT))
+		if (!plugin.getQueue().isEmpty() || config.xpTrackerClientTicksToLinger() == 0)
 		{
-			XpDrop topDrop = plugin.getQueue().peek();
-			for (XpDrop xpDrop : plugin.getQueue())
+			if (config.xpTrackerSkill().equals(XpTrackerSkills.MOST_RECENT))
 			{
-				if (xpDrop != null && !plugin.getFilteredSkills().contains(xpDrop.getSkill().toString().toLowerCase()))
+				Skill lastSkill = pollLastTrackedXpTrackerSkill();
+				if (lastSkill != null)
 				{
-					return xpDrop.getSkill();
+					switchXpTrackerTo(lastSkill);
 				}
 			}
+			else
+			{
+				switchXpTrackerTo(config.xpTrackerSkill().getAssociatedSkill());
+			}
 		}
-		else
+
+		if (lastSkillSetMillis <= 0)
 		{
-			currentSkill = config.xpTrackerSkill().getAssociatedSkill();
+			lastSkillSetMillis = System.currentTimeMillis();
 		}
-		return currentSkill;
+	}
+
+	private void switchXpTrackerTo(Skill skill)
+	{
+		lastSkillSetMillis = System.currentTimeMillis();
+		lastSkill = skill;
+	}
+
+	private Skill pollLastTrackedXpTrackerSkill()
+	{
+		for (XpDrop xpDrop : plugin.getQueue())
+		{
+			if (xpDrop != null && !plugin.getFilteredSkills().contains(xpDrop.getSkill().toString().toLowerCase()))
+			{
+				return xpDrop.getSkill();
+			}
+		}
+		return null;
 	}
 
 	private void updateDrops()
@@ -248,7 +276,7 @@ public class XpDropOverlayManager
 			{
 				if (xpDropInFlight.getFrame() > threshold)
 				{
-					int point = (int)xpDropInFlight.getFrame() - threshold;
+					int point = (int) xpDropInFlight.getFrame() - threshold;
 					float fade = Math.max(0.0f, Math.min(1.0f, point / (float) delta));
 					xpDropInFlight.setAlpha(Math.max(0, 0xff - fade * 0xff));
 				}
@@ -308,27 +336,32 @@ public class XpDropOverlayManager
 			{
 				skill = predictedHitAttackStyle.getSkills()[0];
 			}
-			int icons = 0;
-			if (skill != null &&
-				(config.predictedHitIcon() == XpDropsConfig.PredictedHitIconStyle.SKILL ||
-					config.predictedHitIcon() == XpDropsConfig.PredictedHitIconStyle.HITSPLAT_SKILL))
+			int flags = 0;
+			if (skill != null)
 			{
-				icons |= 1 << CustomizableXpDropsPlugin.SKILL_PRIORITY[skill.ordinal()];
+				flags |= 1 << CustomizableXpDropsPlugin.SKILL_PRIORITY[skill.ordinal()];
+			}
+			flags |= HITSPLAT_FLAGS_MASK;
+			int icons = 0;
+			if ((config.predictedHitIcon() == XpDropsConfig.PredictedHitIconStyle.SKILL ||
+				config.predictedHitIcon() == XpDropsConfig.PredictedHitIconStyle.HITSPLAT_SKILL))
+			{
+				icons |= flags & SKILL_FLAGS_MASK;
 			}
 			if (config.predictedHitIcon() == XpDropsConfig.PredictedHitIconStyle.HITSPLAT ||
-					config.predictedHitIcon() == XpDropsConfig.PredictedHitIconStyle.HITSPLAT_SKILL)
+				config.predictedHitIcon() == XpDropsConfig.PredictedHitIconStyle.HITSPLAT_SKILL)
 			{
-				icons |= 1 << 24;
+				icons |= flags & HITSPLAT_FLAGS_MASK;
 			}
 
-			XpDropInFlight xpDropInFlight = new XpDropInFlight(icons, totalHit, style, 0, 0, 0xff, 0, 0, target, true);
+			XpDropInFlight xpDropInFlight = new XpDropInFlight(icons, flags, totalHit, style, 0, 0, 0xff, 0, 0, target, true, client.getTickCount());
 			drops.add(xpDropInFlight);
 		}
 
 		if (config.isGrouped())
 		{
 			int amount = 0;
-			int icons = 0;
+			int flags = 0;
 
 			XpDrop xpDrop = plugin.getQueue().poll();
 			while (xpDrop != null)
@@ -336,14 +369,10 @@ public class XpDropOverlayManager
 				if (!plugin.getFilteredSkills().contains(xpDrop.getSkill().getName().toLowerCase()))
 				{
 					amount += xpDrop.getExperience();
-					if (config.showIcons())
+					flags |= 1 << CustomizableXpDropsPlugin.SKILL_PRIORITY[xpDrop.getSkill().ordinal()];
+					if (xpDrop.isFake())
 					{
-						icons |= 1 << CustomizableXpDropsPlugin.SKILL_PRIORITY[xpDrop.getSkill().ordinal()];
-					}
-
-					if (xpDrop.isFake() && config.showFakeIcon())
-					{
-						icons |= 1 << 23;
+						flags |= FAKE_SKILL_FLAGS_MASK;
 					}
 				}
 
@@ -351,13 +380,25 @@ public class XpDropOverlayManager
 			}
 			if (amount > 0)
 			{
+				int icons = 0;
+				if (config.showIcons())
+				{
+					icons |= flags & SKILL_FLAGS_MASK;
+				}
+
+				if (config.showFakeIcon())
+				{
+					icons |= flags & FAKE_SKILL_FLAGS_MASK;
+				}
+
 				int hit = config.neverGroupPredictedHit() || filteredHit ? 0 : totalHit;
-				XpDropInFlight xpDropInFlight = new XpDropInFlight(icons, amount, style, 0, 0, 0xff, 0, hit, target, false);
+				XpDropInFlight xpDropInFlight = new XpDropInFlight(icons, flags, amount, style, 0, 0, 0xff, 0, hit, target, false, client.getTickCount());
 				drops.add(xpDropInFlight);
 			}
 		}
 		else
 		{
+
 			XpDrop xpDrop = plugin.getQueue().poll();
 			HashMap<Skill, XpDropInFlight> dropsInFlightMap = new HashMap<>();
 			ArrayList<XpDropInFlight> dropsInFlight = new ArrayList<>();
@@ -365,16 +406,12 @@ public class XpDropOverlayManager
 			{
 				if (!plugin.getFilteredSkills().contains(xpDrop.getSkill().getName().toLowerCase()))
 				{
-					int icons = 0;
-					if (config.showIcons())
-					{
-						icons = 1 << CustomizableXpDropsPlugin.SKILL_PRIORITY[xpDrop.getSkill().ordinal()];
-					}
+					int flags = 1 << CustomizableXpDropsPlugin.SKILL_PRIORITY[xpDrop.getSkill().ordinal()];
 					int amount = xpDrop.getExperience();
 
-					if (xpDrop.isFake() && config.showFakeIcon())
+					if (xpDrop.isFake())
 					{
-						icons |= 1 << 23;
+						flags |= FAKE_SKILL_FLAGS_MASK;
 					}
 
 					if (dropsInFlightMap.containsKey(xpDrop.getSkill()))
@@ -386,8 +423,19 @@ public class XpDropOverlayManager
 					}
 					else
 					{
+						int icons = 0;
+						if (config.showIcons())
+						{
+							icons |= flags & SKILL_FLAGS_MASK;
+						}
+
+						if (config.showFakeIcon())
+						{
+							icons |= flags & FAKE_SKILL_FLAGS_MASK;
+						}
+
 						int hit = config.neverGroupPredictedHit() || filteredHit ? 0 : totalHit;
-						XpDropInFlight xpDropInFlight = new XpDropInFlight(icons, amount, style, 0, 0, 0xff, 0, hit, xpDrop.getAttachedActor(), false);
+						XpDropInFlight xpDropInFlight = new XpDropInFlight(icons, flags, amount, style, 0, 0, 0xff, 0, hit, xpDrop.getAttachedActor(), false, client.getTickCount());
 						dropsInFlightMap.put(xpDrop.getSkill(), xpDropInFlight);
 						dropsInFlight.add(xpDropInFlight);
 					}
@@ -397,6 +445,8 @@ public class XpDropOverlayManager
 			}
 			drops.addAll(dropsInFlight);
 		}
+
+		xpDropMerger.mergeXpDrops(drops, xpDropsInFlight);
 
 		int index = 0;
 		lastFrame = Math.min(0, lastFrame);
@@ -450,7 +500,7 @@ public class XpDropOverlayManager
 		if (maxMonospaceDigit == null || maxMonospaceDigit.getFont() == null || !maxMonospaceDigit.getFont().equals(graphics.getFont()))
 		{
 			maxMonospaceDigit = new MaxMonospaceDigit(0, "0", graphics.getFont());
-			char[] chars = new char[] {'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
+			char[] chars = new char[]{'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
 			for (char aChar : chars)
 			{
 				if (graphics.getFontMetrics().charWidth(aChar) >= maxMonospaceDigit.getWidth())

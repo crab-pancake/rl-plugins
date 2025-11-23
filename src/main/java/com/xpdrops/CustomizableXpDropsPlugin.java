@@ -3,6 +3,8 @@ package com.xpdrops;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Provides;
 import com.xpdrops.attackstyles.AttackStyle;
+import com.xpdrops.config.ImportExport;
+import com.xpdrops.config.MigrationManager;
 import com.xpdrops.config.XpDropsConfig;
 import com.xpdrops.overlay.XpDropOverlayManager;
 import com.xpdrops.predictedhit.Hit;
@@ -14,16 +16,13 @@ import net.runelite.api.Actor;
 import net.runelite.api.Client;
 import net.runelite.api.EquipmentInventorySlot;
 import net.runelite.api.GameState;
-import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
-import net.runelite.api.ItemID;
 import net.runelite.api.NPC;
 import net.runelite.api.Player;
 import net.runelite.api.Prayer;
-import net.runelite.api.VarPlayer;
-import net.runelite.api.Varbits;
 import net.runelite.api.events.BeforeRender;
+import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.FakeXpDrop;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
@@ -31,6 +30,10 @@ import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.events.ScriptPreFired;
 import net.runelite.api.events.StatChanged;
 import net.runelite.api.events.VarbitChanged;
+import net.runelite.api.gameval.InventoryID;
+import net.runelite.api.gameval.ItemID;
+import net.runelite.api.gameval.VarPlayerID;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
@@ -62,7 +65,7 @@ import static net.runelite.api.ScriptID.XPDROPS_SETDROPSIZE;
 @Slf4j
 public class CustomizableXpDropsPlugin extends Plugin
 {
-	public static final int[] SKILL_PRIORITY = new int[] {1, 5, 2, 6, 3, 7, 4, 15, 17, 18, 0, 16, 11, 14, 13, 9, 8, 10, 19, 20, 12, 22, 21};
+	public static final int[] SKILL_PRIORITY = new int[] {1, 5, 2, 6, 3, 7, 4, 15, 17, 18, 0, 16, 11, 14, 13, 9, 8, 10, 19, 20, 12, 22, 21, 23};
 	private static final Set<Integer> VOIDWAKERS = new ImmutableSet.Builder<Integer>()
 		.addAll(ItemVariationMapping.getVariations(ItemID.VOIDWAKER))
 		.build();
@@ -86,6 +89,12 @@ public class CustomizableXpDropsPlugin extends Plugin
 
 	@Inject
 	private ChambersLayoutSolver chambersLayoutSolver;
+
+	@Inject
+	private ImportExport importExport;
+
+	@Inject
+	private MigrationManager migrationManager;
 
 	@Provides
 	XpDropsConfig provideConfig(ConfigManager configManager)
@@ -112,7 +121,7 @@ public class CustomizableXpDropsPlugin extends Plugin
 	private static final int XP_TRACKER_SCRIPT_ID = 997;
 	private static final int XP_TRACKER_WIDGET_GROUP_ID = 122;
 	private static final int XP_TRACKER_WIDGET_CHILD_ID = 4;
-	private static final int[] previous_exp = new int[Skill.values().length - 1];
+	private static final int[] previous_exp = new int[net.runelite.api.Skill.values().length];
 	private boolean resetXpTrackerLingerTimerFlag = false;
 
 	private int attackStyleVarbit = -1;
@@ -125,6 +134,8 @@ public class CustomizableXpDropsPlugin extends Plugin
 	protected void startUp()
 	{
 		long time = System.currentTimeMillis();
+
+		migrationManager.migrate();
 
 		if (client.getGameState() == GameState.LOGGED_IN)
 		{
@@ -163,6 +174,9 @@ public class CustomizableXpDropsPlugin extends Plugin
 		setXpTrackerHidden(config.useXpTracker());
 
 		xpDropDamageCalculator.populateMap();
+		xpDropDamageCalculator.populateUserDefinedXpBonusMapping(config.predictedHitModifiers());
+
+		importExport.addImportExportMenuOptions();
 
 		long totalTime = System.currentTimeMillis() - time;
 		log.debug("Plugin took {}ms to start.", totalTime);
@@ -176,9 +190,9 @@ public class CustomizableXpDropsPlugin extends Plugin
 
 	private void initAttackStyles()
 	{
-		attackStyleVarbit = client.getVarpValue(VarPlayer.ATTACK_STYLE);
-		equippedWeaponTypeVarbit = client.getVarbitValue(Varbits.EQUIPPED_WEAPON_TYPE);
-		castingModeVarbit = client.getVarbitValue(Varbits.DEFENSIVE_CASTING_MODE);
+		attackStyleVarbit = client.getVarpValue(VarPlayerID.COM_MODE);
+		equippedWeaponTypeVarbit = client.getVarbitValue(VarbitID.COMBAT_WEAPON_CATEGORY);
+		castingModeVarbit = client.getVarbitValue(VarbitID.AUTOCAST_DEFMODE);
 		updateAttackStyle(equippedWeaponTypeVarbit, attackStyleVarbit, castingModeVarbit);
 	}
 
@@ -204,6 +218,7 @@ public class CustomizableXpDropsPlugin extends Plugin
 	{
 		xpDropOverlayManager.shutdown();
 		setXpTrackerHidden(false); // should be according to varbit?
+		importExport.removeMenuOptions();
 	}
 
 	protected void setXpTrackerHidden(boolean hidden)
@@ -224,9 +239,9 @@ public class CustomizableXpDropsPlugin extends Plugin
 		boolean shouldDraw = client.getVarbitValue(EXPERIENCE_TRACKER_TOGGLE) == 1;
 		xpDropOverlayManager.setShouldDraw(shouldDraw);
 
-		int currentAttackStyleVarbit = client.getVarpValue(VarPlayer.ATTACK_STYLE);
-		int currentEquippedWeaponTypeVarbit = client.getVarbitValue(Varbits.EQUIPPED_WEAPON_TYPE);
-		int currentCastingModeVarbit = client.getVarbitValue(Varbits.DEFENSIVE_CASTING_MODE);
+		int currentAttackStyleVarbit = client.getVarpValue(VarPlayerID.COM_MODE);
+		int currentEquippedWeaponTypeVarbit = client.getVarbitValue(VarbitID.COMBAT_WEAPON_CATEGORY);
+		int currentCastingModeVarbit = client.getVarbitValue(VarbitID.AUTOCAST_DEFMODE);
 
 		if (attackStyleVarbit != currentAttackStyleVarbit || equippedWeaponTypeVarbit != currentEquippedWeaponTypeVarbit || castingModeVarbit != currentCastingModeVarbit)
 		{
@@ -288,12 +303,12 @@ public class CustomizableXpDropsPlugin extends Plugin
 				xpDropOverlayManager.clearIconCache();
 			}
 
-			if ("xpDropOverlayPriority".equals(configChanged.getKey()))
+			if ("xpDropOverlayPriority1".equals(configChanged.getKey()))
 			{
 				xpDropOverlayManager.xpDropOverlayPriorityChanged();
 			}
 
-			if ("xpTrackerOverlayPriority".equals(configChanged.getKey()))
+			if ("xpTrackerOverlayPriority1".equals(configChanged.getKey()))
 			{
 				xpDropOverlayManager.xpTrackerOverlayPriorityChanged();
 			}
@@ -301,6 +316,11 @@ public class CustomizableXpDropsPlugin extends Plugin
 			if ("xpTrackerHideVanilla".equals(configChanged.getKey()))
 			{
 				setXpTrackerHidden(config.xpTrackerHideVanilla());
+			}
+
+			if ("predictedHitModifiers".equals(configChanged.getKey()))
+			{
+				xpDropDamageCalculator.populateUserDefinedXpBonusMapping(config.predictedHitModifiers());
 			}
 		}
 	}
@@ -429,6 +449,14 @@ public class CustomizableXpDropsPlugin extends Plugin
 				else if (lastOpponent instanceof NPC)
 				{
 					lastOpponentId = ((NPC) lastOpponent).getId();
+
+					// Special case for Awakened DT2 Bosses
+					if ((lastOpponentId == LEVIATHAN_ID || lastOpponentId == VARDORVIS_ID)
+						&& lastOpponent.getCombatLevel() > 1000)
+					{
+						lastOpponentId *= -1;
+					}
+
 					hit = xpDropDamageCalculator.calculateHitOnNpc(lastOpponentId, currentXp - previousXp, config.xpMultiplier(), config.ignoreDefaultMultiplier());
 				}
 				log.debug("Hit npc with hp xp drop xp:{} hit:{} npc_id:{}", currentXp - previousXp, hit, lastOpponentId);
@@ -448,6 +476,11 @@ public class CustomizableXpDropsPlugin extends Plugin
 		xpDropOverlayManager.update();
 	}
 
+	@Subscribe
+	protected void onChatMessage(ChatMessage chatMessage) {
+		chambersLayoutSolver.onChatMessage(chatMessage);
+	}
+
 	private XpPrayer getActivePrayer()
 	{
 		for (XpPrayer prayer : XpPrayer.values())
@@ -462,7 +495,7 @@ public class CustomizableXpDropsPlugin extends Plugin
 
 	protected boolean isVoidwakerEquipped()
 	{
-		ItemContainer equipment = client.getItemContainer(InventoryID.EQUIPMENT);
+		ItemContainer equipment = client.getItemContainer(InventoryID.WORN);
 		if (equipment == null) return false;
 		Item weapon = equipment.getItem(EquipmentInventorySlot.WEAPON.getSlotIdx());
 		return weapon != null && VOIDWAKERS.contains(weapon.getId());

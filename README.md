@@ -16,8 +16,28 @@ A plugin which allows you to customize XP drops in more ways than the default OS
 - Add a custom prefix and suffix to the XP drop text.
 - Show predicted damage from XP drop.
 - Replace the XP tracker widget with a minimalistic one.
+- Export your plugin settings to share with a friend by right-clicking the xp orb in-game.
 
 #### Change log
+- v1.10.1 - Fix import/export menu not showing.
+- v1.10.0 - Add sailing skill.
+<details>
+<summary>Older versions changelog</summary>
+
+- v1.9.12 - Fix issue where XP tracker would always stay on screen when not using Most Recent as tracked skill.
+- v1.9.11 - Fix overlay priority - `@taysta`
+- v1.9.10 - Fixed a bug regarding predicted hits being wrong when relogging within CM.
+- v1.9.9 - Added xp bonus calculation for Doom of Mokhaiotl.
+- v1.9.8 - Added Doom of Mokhaiotl missing xp bonuses - `@Richardant`
+- v1.9.7 - Added Varlamore pt 3 xp bonuses - `@coopermor`
+- v1.9.6 - Fixed attack styles for powered staffs - `@umer-rs`
+- v1.9.5 - Added Yama xp bonus.
+- v1.9.4 - Fix for awakened bosses (depends on runelite api update for correct combat level), added xp modifiers.
+- v1.9.3 - "Fix" cases of split xp drops most notably during olm melee hand running. Added the new prayers Deadeye and Mystic vigour.
+- v1.9.2 - Add migration manager to drop use of OverlayPriority which is deprecated.
+- v1.9.1 - Add option to export and import plugin settings. Right-click the xp orb in-game to export or import.
+- v1.9.0 - Add xp multiplier config.
+- v1.8.16 - Add titans xp bonus.
 - v1.8.15.1 - Fix to account for Runelite api change. - `@DapperMickie`
 - v1.8.15 - Add xp bonuses for Hueycoatl and Amoxliatl. - `@wavesy`
 - v1.8.14 - Add xp bonuses for new npcs.
@@ -73,6 +93,7 @@ A plugin which allows you to customize XP drops in more ways than the default OS
 - v1.2.0 - Add config options for prefix and suffix for XP drop text.
 - v1.1.0 - Updated positioning logic and make sure shortly subsequent XP drops are evenly spaced.
 - v1.0.0 - Initial release.
+</details>
 
 ### Known issues
 
@@ -135,6 +156,9 @@ Customizable XP tracker (Settings: Font size 16, Font style default, icon size o
 
 With optional progress bar (Settings: Font size 16, Font style bold, icon size override 25).\
 ![xptrackerprogress](https://i.imgur.com/d9lKvQK.png)
+
+Import and export settings of this plugin to share with friends.\
+![xpgloberightclickmenu](https://i.imgur.com/GYCCXQj.png)
 
 From https://github.com/ruchir90 \
 ![pic1](https://i.imgur.com/8W9zE8g.png)

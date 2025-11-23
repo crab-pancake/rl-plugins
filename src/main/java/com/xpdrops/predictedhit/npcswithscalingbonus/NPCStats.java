@@ -2,11 +2,13 @@ package com.xpdrops.predictedhit.npcswithscalingbonus;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.With;
 
 @AllArgsConstructor
 @Getter
 public class NPCStats
 {
+ 	@With
 	private int hp;
 	private int att;
 	private int str;
@@ -34,6 +36,6 @@ public class NPCStats
 		int hp = Math.min(npcStats.hp, MAX_HP_FOR_MULTIPLIER);
 		double averageLevel = Math.floor((hp + npcStats.getAtt() + npcStats.getStr() + npcStats.getDef()) / 4.0);
 		double averageDefBonus = Math.floor((npcStats.getDefensiveStab() + npcStats.getDefensiveSlash() + npcStats.getDefensiveCrush()) / 3.0);
-		return 1.0 + 0.025 * Math.floor((averageLevel * (averageDefBonus + npcStats.getOffensiveStr() + npcStats.getOffensiveAtt())) / 5120.0);
+		return 1.0 + 0.025 * Math.floor(39 * (averageLevel * (averageDefBonus + npcStats.getOffensiveStr() + npcStats.getOffensiveAtt())) / 200_000);
 	}
 }
