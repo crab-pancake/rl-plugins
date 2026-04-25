@@ -19,6 +19,18 @@ public interface TickTimestampConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "absolute",
+		name = "Display absolute timestamp",
+		description = "Display timestamp based on server clock (changes while logged out)?<br>" +
+			"Unticked = client time (freezes while logged out)<br>" +
+			"Restart plugin to see changes when toggling this setting - this will behave weirdly until client is restarted."
+	)
+	default boolean absolute()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = "opaqueTimestamp",
 		name = "Timestamps (opaque)",
 		position = 1,

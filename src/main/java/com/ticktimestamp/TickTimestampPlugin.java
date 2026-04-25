@@ -14,6 +14,7 @@ import net.runelite.api.Varbits;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.ScriptCallbackEvent;
+import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
@@ -41,6 +42,7 @@ public class TickTimestampPlugin extends Plugin
 	private TickTimestampConfig config;
 
 	private int loginGameTick = 0;
+	private boolean absolute;
 
 	private final Set<ChatMessageType> timestampedTypes = new HashSet<>(Arrays.asList(ChatMessageType.CONSOLE,ChatMessageType.SPAM,ChatMessageType.GAMEMESSAGE));
 
@@ -54,6 +56,7 @@ public class TickTimestampPlugin extends Plugin
 	protected void startUp()
 	{
 		updateTypes();
+		absolute = config.absolute();
 	}
 
 	@Subscribe
@@ -62,7 +65,7 @@ public class TickTimestampPlugin extends Plugin
 		{
 			case LOGGING_IN:
 			case HOPPING:
-				loginGameTick = client.getTickCount();
+				loginGameTick = absolute ? client.getVarpValue(VarPlayerID.MAP_CLOCK) : client.getTickCount();
 				break;
 		}
 	}
@@ -86,9 +89,7 @@ public class TickTimestampPlugin extends Plugin
 
 	@Subscribe
 	private void onChatMessage(ChatMessage e){
-		if (e.getMessageNode().getTimestamp() >> 24 > 1){
-			e.getMessageNode().setTimestamp(client.getTickCount());
-		}
+		tweakTimeStamp(e.getMessageNode());
 	}
 
 	@Subscribe
@@ -103,10 +104,7 @@ public class TickTimestampPlugin extends Plugin
 		final MessageNode messageNode = client.getMessages().get(uid);
 		assert messageNode != null : "chat message build for unknown message";
 
-		// rebuilt per message. if just added, it will have epoch time: big number
-		if (messageNode.getTimestamp() >> 24 > 1){
-			messageNode.setTimestamp(client.getTickCount());
-		}
+		tweakTimeStamp(messageNode);
 
 		String timestamp = "";
 
@@ -142,6 +140,13 @@ public class TickTimestampPlugin extends Plugin
 		}
 		else {
 			Arrays.asList(ChatMessageType.PUBLICCHAT,ChatMessageType.PRIVATECHAT,ChatMessageType.PRIVATECHATOUT).forEach(timestampedTypes::remove);
+		}
+	}
+
+	private void tweakTimeStamp(MessageNode node){
+		// rebuilt per message. if just added, it will have epoch time: big number
+		if (node.getTimestamp() >> 24 > 1){
+			node.setTimestamp(absolute ? client.getVarpValue(VarPlayerID.MAP_CLOCK) : client.getTickCount());
 		}
 	}
 }
